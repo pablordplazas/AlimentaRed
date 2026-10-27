@@ -49,6 +49,24 @@ class SessionManager private constructor(context: Context) {
         return prefs.getString(KEY_ROLE, "DONANTE") ?: "DONANTE"
     }
 
+    fun getServerUrl(): String {
+        return prefs.getString(KEY_SERVER_URL, DEFAULT_SERVER_URL) ?: DEFAULT_SERVER_URL
+    }
+
+    fun setServerUrl(url: String) {
+        var formatted = url.trim()
+        if (!formatted.startsWith("http://") && !formatted.startsWith("https://")) {
+            formatted = "http://$formatted"
+        }
+        if (!formatted.endsWith("/")) {
+            formatted = "$formatted/"
+        }
+        if (!formatted.endsWith("api/")) {
+            formatted = "${formatted}api/"
+        }
+        prefs.edit().putString(KEY_SERVER_URL, formatted).apply()
+    }
+
     fun clearSession() {
         prefs.edit().clear().apply()
         _isLoggedInFlow.value = false
@@ -60,6 +78,8 @@ class SessionManager private constructor(context: Context) {
         private const val KEY_TOKEN = "jwt_token"
         private const val KEY_USER_JSON = "user_json"
         private const val KEY_ROLE = "user_role"
+        private const val KEY_SERVER_URL = "server_url"
+        const val DEFAULT_SERVER_URL = "http://192.168.1.18:8080/api/"
 
         @Volatile
         private var INSTANCE: SessionManager? = null

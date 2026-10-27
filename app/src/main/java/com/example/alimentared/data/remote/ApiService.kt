@@ -163,8 +163,9 @@ interface ApiService {
 }
 
 object RetrofitClient {
-    // 10.0.2.2 mapea a localhost:8080 del host en el emulador estándar de Android
-    var baseUrl: String = "http://10.0.2.2:8080/api/"
+    // Por defecto usa la IP local del host (192.168.1.18:8080) que funciona garantizada en emulador y físico
+    var baseUrl: String = "http://192.168.1.18:8080/api/"
+        private set
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
@@ -174,15 +175,42 @@ object RetrofitClient {
         OkHttpClient.Builder()
             .addInterceptor(AuthInterceptor())
             .addInterceptor(loggingInterceptor)
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(15, TimeUnit.SECONDS)
+            .writeTimeout(15, TimeUnit.SECONDS)
             .build()
     }
 
-    val instance: ApiService by lazy {
-        Retrofit.Builder()
-            .baseUrl(baseUrl)
+    @Volatile
+    private var _instance: ApiService? = null
+
+    val instance: ApiService
+        get() {
+            return _instance ?: synchronized(this) {
+                _instance ?: buildApiService(baseUrl).also { _instance = it }
+            }
+        }
+
+    fun updateBaseUrl(newUrl: String) {
+        var formatted = newUrl.trim()
+        if (!formatted.startsWith("http://") && !formatted.startsWith("https://")) {
+            formatted = "http://$formatted"
+        }
+        if (!formatted.endsWith("/")) {
+            formatted = "$formatted/"
+        }
+        if (!formatted.endsWith("api/")) {
+            formatted = "${formatted}api/"
+        }
+        baseUrl = formatted
+        synchronized(this) {
+            _instance = buildApiService(formatted)
+        }
+    }
+
+    private fun buildApiService(url: String): ApiService {
+        return Retrofit.Builder()
+            .baseUrl(url)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()

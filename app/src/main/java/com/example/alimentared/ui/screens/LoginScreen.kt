@@ -11,7 +11,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.Settings
+import kotlinx.coroutines.launch
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -35,6 +39,12 @@ fun LoginScreen(
     val uiState by authViewModel.uiState.collectAsState()
 
     var modoRegistro by remember { mutableStateOf(false) }
+    var mostrarConfigServidor by remember { mutableStateOf(false) }
+    val sessionManager = remember { com.example.alimentared.data.session.SessionManager.getInstance() }
+    var servidorUrlActual by remember { mutableStateOf(sessionManager.getServerUrl()) }
+    var estadoTestServidor by remember { mutableStateOf<String?>(null) }
+    var probandoConexion by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
 
     // Campos Login
     var email by remember { mutableStateOf("receptora@pancompartido.org") }
@@ -80,6 +90,11 @@ fun LoginScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White)
                     }
                 },
+                actions = {
+                    IconButton(onClick = { mostrarConfigServidor = true }) {
+                        Icon(Icons.Default.Settings, contentDescription = "Configurar Servidor", tint = Color.White)
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = BlueDark)
             )
         },
@@ -114,6 +129,29 @@ fun LoginScreen(
                         color = RedPrimary,
                         fontWeight = FontWeight.Bold
                     )
+                }
+            }
+
+            // Badge Servidor Activo
+            Surface(
+                onClick = { mostrarConfigServidor = true },
+                shape = RoundedCornerShape(8.dp),
+                color = BlueDark.copy(alpha = 0.05f),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.Dns, contentDescription = null, tint = RedPrimary, modifier = Modifier.size(14.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        "Servidor: $servidorUrlActual",
+                        fontSize = 11.sp,
+                        color = Color.DarkGray,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text("Cambiar", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = RedPrimary)
                 }
             }
 
@@ -301,5 +339,126 @@ fun LoginScreen(
                 }
             }
         }
+    }
+
+    if (mostrarConfigServidor) {
+        var urlTemp by remember { mutableStateOf(servidorUrlActual) }
+
+        AlertDialog(
+            onDismissRequest = {
+                mostrarConfigServidor = false
+                estadoTestServidor = null
+            },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Settings, contentDescription = null, tint = RedPrimary)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Configurar Servidor Backend", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        "Selecciona un preset o ingresa la URL de tu API REST:",
+                        fontSize = 12.sp,
+                        color = Color.Gray
+                    )
+
+                    OutlinedTextField(
+                        value = urlTemp,
+                        onValueChange = { urlTemp = it },
+                        label = { Text("URL Base del API") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = RedPrimary,
+                            focusedLabelColor = RedPrimary
+                        )
+                    )
+
+                    Text("Presets Rápidos:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = BlueDark)
+
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        FilterChip(
+                            selected = urlTemp.contains("192.168.1.18"),
+                            onClick = { urlTemp = "http://192.168.1.18:8080/api/" },
+                            label = { Text("IP Local", fontSize = 10.sp) }
+                        )
+                        FilterChip(
+                            selected = urlTemp.contains("10.0.2.2"),
+                            onClick = { urlTemp = "http://10.0.2.2:8080/api/" },
+                            label = { Text("10.0.2.2", fontSize = 10.sp) }
+                        )
+                        FilterChip(
+                            selected = urlTemp.contains("127.0.0.1"),
+                            onClick = { urlTemp = "http://127.0.0.1:8080/api/" },
+                            label = { Text("ADB Reverse", fontSize = 10.sp) }
+                        )
+                    }
+
+                    if (estadoTestServidor != null) {
+                        Text(
+                            estadoTestServidor!!,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (estadoTestServidor!!.startsWith("✓")) Color(0xFF16A34A) else RedPrimary
+                        )
+                    }
+
+                    OutlinedButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                probandoConexion = true
+                                estadoTestServidor = "Probando conexión..."
+                                try {
+                                    com.example.alimentared.data.remote.RetrofitClient.updateBaseUrl(urlTemp)
+                                    val res = com.example.alimentared.data.remote.RetrofitClient.instance.checkHealth()
+                                    if (res.isSuccessful) {
+                                        estadoTestServidor = "✓ Conexión Exitosa con el Backend (API UP)"
+                                    } else {
+                                        estadoTestServidor = "✗ Servidor respondió con código ${res.code()}"
+                                    }
+                                } catch (e: Exception) {
+                                    estadoTestServidor = "✗ Error: ${e.localizedMessage ?: "No se pudo conectar"}"
+                                } finally {
+                                    probandoConexion = false
+                                }
+                            }
+                        },
+                        enabled = !probandoConexion,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (probandoConexion) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                        } else {
+                            Text("Probar Conexión", fontSize = 12.sp)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        sessionManager.setServerUrl(urlTemp)
+                        servidorUrlActual = sessionManager.getServerUrl()
+                        com.example.alimentared.data.remote.RetrofitClient.updateBaseUrl(servidorUrlActual)
+                        mostrarConfigServidor = false
+                        estadoTestServidor = null
+                        authViewModel.limpiarError()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = RedPrimary)
+                ) {
+                    Text("Guardar y Aplicar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    mostrarConfigServidor = false
+                    estadoTestServidor = null
+                }) {
+                    Text("Cancelar")
+                }
+            }
+        )
     }
 }

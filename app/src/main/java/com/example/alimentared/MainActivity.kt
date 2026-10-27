@@ -14,7 +14,8 @@ import com.example.alimentared.ui.theme.AlimentaRedTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        SessionManager.initialize(applicationContext)
+        val session = SessionManager.initialize(applicationContext)
+        com.example.alimentared.data.remote.RetrofitClient.updateBaseUrl(session.getServerUrl())
 
         setContent {
             AlimentaRedTheme {

@@ -40,6 +40,13 @@ class IncidenciasViewModel : ViewModel() {
                         isLoading = false,
                         incidencias = res.body()!!.contenido
                     )
+                } else if (res.code() == 403) {
+                    // Receptora y Donante no son auditores globales, pueden reportar incidencias libremente
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        incidencias = emptyList(),
+                        error = null
+                    )
                 } else {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
