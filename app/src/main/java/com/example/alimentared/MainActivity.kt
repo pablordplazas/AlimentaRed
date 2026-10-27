@@ -7,13 +7,20 @@ import androidx.compose.runtime.*
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.alimentared.data.session.SessionManager
 import com.example.alimentared.ui.screens.*
+import com.example.alimentared.ui.theme.AlimentaRedTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val session = SessionManager.initialize(applicationContext)
+        com.example.alimentared.data.remote.RetrofitClient.updateBaseUrl(session.getServerUrl())
+
         setContent {
-            AlimentaRedApp()
+            AlimentaRedTheme {
+                AlimentaRedApp()
+            }
         }
     }
 }
@@ -21,10 +28,14 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AlimentaRedApp() {
     val navController = rememberNavController()
-    var rolUsuarioActual by remember { mutableStateOf("Donante") }
+    val sessionManager = remember { SessionManager.getInstance() }
+    val isLoggedIn by sessionManager.isLoggedInFlow.collectAsState()
+    var rolUsuarioActual by remember { mutableStateOf(sessionManager.getRol()) }
 
-    NavHost(navController = navController, startDestination = "onboarding") {
-        
+    val startDest = if (isLoggedIn) "main" else "onboarding"
+
+    NavHost(navController = navController, startDestination = startDest) {
+
         composable("onboarding") {
             OnboardingScreen(
                 onIrALogin = { navController.navigate("login") }
@@ -36,6 +47,7 @@ fun AlimentaRedApp() {
                 onLoginExitoso = { rol ->
                     rolUsuarioActual = rol
                     navController.navigate("main") {
+                        popUpTo("login") { inclusive = true }
                         popUpTo("onboarding") { inclusive = true }
                     }
                 },
@@ -49,7 +61,8 @@ fun AlimentaRedApp() {
                 onLoteClick = { id -> navController.navigate("detail/$id") },
                 onCrearLoteClick = { navController.navigate("publish") },
                 onCerrarSesion = {
-                    navController.navigate("onboarding") {
+                    sessionManager.clearSession()
+                    navController.navigate("login") {
                         popUpTo("main") { inclusive = true }
                     }
                 }
@@ -61,12 +74,21 @@ fun AlimentaRedApp() {
             LoteDetailScreen(
                 loteId = id,
                 rolUsuario = rolUsuarioActual,
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onReportarIncidencia = { loteId -> navController.navigate("incidencias/$loteId") }
             )
         }
 
         composable("publish") {
             PublishLoteScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable("incidencias/{loteId}") { backStack ->
+            val loteId = backStack.arguments?.getString("loteId")?.toLongOrNull()
+            IncidenciasScreen(
+                loteIdInicial = loteId,
                 onBack = { navController.popBackStack() }
             )
         }
