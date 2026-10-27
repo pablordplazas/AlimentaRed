@@ -212,7 +212,8 @@ data class StrikeResponse(
 
 data class ApelacionStrikeRequest(
     val strikeId: Long,
-    val justificacion: String
+    val justificacion: String,
+    val aprobada: Boolean = true
 )
 
 // --- REPORTES Y MÉTRICAS (RF09, RN04) ---

@@ -122,7 +122,7 @@ class AuthViewModel : ViewModel() {
 
     private fun parseErrorMessage(code: Int, body: String?): String {
         if (code == 403) {
-            return "Cuenta suspendida: tu organización acumula 3 strikes vigentes (RN08). Consulta el panel de apelaciones."
+            return "⛔ CUENTA SUSPENDIDA: Tu organización acumula 3 strikes vigentes (RN08). Envía un correo a coordinador@alimentared.com para solicitar la revisión y apelación de tu caso."
         }
         if (code == 401) {
             return "Credenciales inválidas. Verifica tu correo y contraseña."

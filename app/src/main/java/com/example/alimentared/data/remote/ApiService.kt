@@ -141,6 +141,9 @@ interface ApiService {
     @GET("organizaciones/{id}/strikes")
     suspend fun getStrikesPorOrganizacion(@Path("id") id: Long): Response<List<StrikeResponse>>
 
+    @GET("organizaciones/strikes/todos")
+    suspend fun getTodosLosStrikes(): Response<List<StrikeResponse>>
+
     @PATCH("organizaciones/{id}/strikes/apelar")
     suspend fun apelarStrike(
         @Path("id") id: Long,
