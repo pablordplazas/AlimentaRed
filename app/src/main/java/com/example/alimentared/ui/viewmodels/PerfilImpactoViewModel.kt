@@ -65,9 +65,12 @@ class PerfilImpactoViewModel : ViewModel() {
                     _uiState.value = _uiState.value.copy(impacto = impactoRes.body()!!)
                 }
 
-                // 3. Cargar strikes de la organización si aplica
+                // 3. Cargar strikes de la organización únicamente si es Donante o Receptora
+                val rol = _uiState.value.usuario?.rol?.uppercase() ?: ""
+                val esDonanteOReceptora = rol.contains("DONANTE") || rol.contains("RECEPTOR")
                 val orgId = _uiState.value.usuario?.organizacion?.id
-                if (orgId != null) {
+
+                if (esDonanteOReceptora && orgId != null) {
                     val strikesRes = RetrofitClient.instance.getStrikesPorOrganizacion(orgId)
                     if (strikesRes.isSuccessful && strikesRes.body() != null) {
                         val lista = strikesRes.body()!!
@@ -76,6 +79,11 @@ class PerfilImpactoViewModel : ViewModel() {
                             strikesVigentes = lista.count { it.vigente }
                         )
                     }
+                } else {
+                    _uiState.value = _uiState.value.copy(
+                        strikes = emptyList(),
+                        strikesVigentes = 0
+                    )
                 }
 
                 _uiState.value = _uiState.value.copy(isLoading = false)

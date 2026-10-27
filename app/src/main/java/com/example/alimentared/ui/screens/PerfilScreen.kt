@@ -34,6 +34,10 @@ fun PerfilScreen(
     var strikeAApelar by remember { mutableStateOf<StrikeResponse?>(null) }
     var justificacionApelacion by remember { mutableStateOf("") }
 
+    val user = uiState.usuario
+    val rol = user?.rol?.uppercase() ?: ""
+    val esDonanteOReceptora = rol.contains("DONANTE") || rol.contains("RECEPTOR")
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -64,7 +68,6 @@ fun PerfilScreen(
             }
 
             // 1. TARJETA DE ORGANIZACIÓN Y USUARIO
-            val user = uiState.usuario
             Card(
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -90,75 +93,99 @@ fun PerfilScreen(
                 }
             }
 
-            // 2. VISUALIZADOR DE STRIKES Y SANCIONES (RN08 / RN12)
-            val strikesVigentes = uiState.strikesVigentes
-            Card(
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = if (strikesVigentes >= 3) Color(0xFFFEE2E2) else Color.White
-                ),
-                border = CardDefaults.outlinedCardBorder().copy(
-                    brush = androidx.compose.ui.graphics.SolidColor(
-                        if (strikesVigentes >= 3) RedPrimary else Color(0xFFE2E8F0)
-                    )
-                ),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Gavel, contentDescription = null, tint = RedPrimary)
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Strikes Acumulados (RN08)", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = BlueDark)
+            // 2. VISUALIZADOR DE STRIKES Y SANCIONES (RN08 / RN12) - EXCLUSIVO PARA DONANTE Y RECEPTORA
+            if (esDonanteOReceptora) {
+                val strikesVigentes = uiState.strikesVigentes
+                Card(
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (strikesVigentes >= 3) Color(0xFFFEE2E2) else Color.White
+                    ),
+                    border = CardDefaults.outlinedCardBorder().copy(
+                        brush = androidx.compose.ui.graphics.SolidColor(
+                            if (strikesVigentes >= 3) RedPrimary else Color(0xFFE2E8F0)
+                        )
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Gavel, contentDescription = null, tint = RedPrimary)
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Strikes Acumulados (RN08)", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = BlueDark)
+                            }
+                            Text("$strikesVigentes / 3", fontWeight = FontWeight.Black, fontSize = 16.sp, color = if (strikesVigentes >= 3) RedPrimary else BlueDark)
                         }
-                        Text("$strikesVigentes / 3", fontWeight = FontWeight.Black, fontSize = 16.sp, color = if (strikesVigentes >= 3) RedPrimary else BlueDark)
-                    }
 
-                    LinearProgressIndicator(
-                        progress = { (strikesVigentes / 3.0f).coerceIn(0f, 1f) },
-                        modifier = Modifier.fillMaxWidth().height(8.dp),
-                        color = if (strikesVigentes >= 3) RedPrimary else Color(0xFFF59E0B),
-                        trackColor = Color(0xFFE2E8F0),
-                    )
-
-                    if (strikesVigentes >= 3) {
-                        Text(
-                            "⛔ CUENTA SUSPENDIDA: Al acumular 3 strikes por inasistencia o impuntualidad, tu organización no puede solicitar ni publicar alimentos. Radica una apelación para revisión (RN08/RN12).",
-                            color = RedDark,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
+                        LinearProgressIndicator(
+                            progress = { (strikesVigentes / 3.0f).coerceIn(0f, 1f) },
+                            modifier = Modifier.fillMaxWidth().height(8.dp),
+                            color = if (strikesVigentes >= 3) RedPrimary else Color(0xFFF59E0B),
+                            trackColor = Color(0xFFE2E8F0),
                         )
-                    } else {
-                        Text(
-                            "Al acumular 3 strikes vigentes, la cuenta se suspende automáticamente.",
-                            fontSize = 11.sp,
-                            color = Color.Gray
-                        )
-                    }
 
-                    // Lista de strikes con opción de apelar
-                    if (uiState.strikes.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text("Detalle de Sanciones:", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = BlueDark)
-                        uiState.strikes.forEach { strike ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text("• ${strike.nombreStrike}", fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = BlueDark)
-                                    Text(strike.detalles ?: "Infracción logística", fontSize = 10.sp, color = Color.Gray)
-                                }
-                                if (strike.vigente) {
-                                    TextButton(onClick = { strikeAApelar = strike }) {
-                                        Text("Apelar (RN12)", fontSize = 11.sp, color = RedPrimary, fontWeight = FontWeight.Bold)
+                        if (strikesVigentes >= 3) {
+                            Text(
+                                "⛔ CUENTA SUSPENDIDA: Al acumular 3 strikes por inasistencia o impuntualidad, tu organización no puede solicitar ni publicar alimentos. Radica una apelación para revisión (RN08/RN12).",
+                                color = RedDark,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        } else {
+                            Text(
+                                "Al acumular 3 strikes vigentes, la cuenta se suspende automáticamente.",
+                                fontSize = 11.sp,
+                                color = Color.Gray
+                            )
+                        }
+
+                        // Lista de strikes con opción de apelar
+                        if (uiState.strikes.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text("Detalle de Sanciones:", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = BlueDark)
+                            uiState.strikes.forEach { strike ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text("• ${strike.nombreStrike}", fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = BlueDark)
+                                        Text(strike.detalles ?: "Infracción logística", fontSize = 10.sp, color = Color.Gray)
                                     }
-                                } else {
-                                    Text("Anulado", fontSize = 10.sp, color = Color(0xFF16A34A), fontWeight = FontWeight.Bold)
+                                    if (strike.vigente) {
+                                        TextButton(onClick = { strikeAApelar = strike }) {
+                                            Text("Apelar (RN12)", fontSize = 11.sp, color = RedPrimary, fontWeight = FontWeight.Bold)
+                                        }
+                                    } else {
+                                        Text("Anulado", fontSize = 10.sp, color = Color(0xFF16A34A), fontWeight = FontWeight.Bold)
+                                    }
                                 }
                             }
                         }
+                    }
+                }
+            } else {
+                // PANEL INFORMATIVO PARA COORDINADOR Y ADMINISTRADOR (NO RECIBEN STRIKES)
+                Card(
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.VerifiedUser, contentDescription = null, tint = RedPrimary)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Panel de Control Operativo ($rol)", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = BlueDark)
+                        }
+                        Text(
+                            "Tu perfil cuenta con privilegios administrativos y de auditoría. Los strikes y sanciones (RN08 / RN12) aplican exclusivamente a organizaciones Donantes y Receptoras por cumplimiento de franjas horarias e inocuidad.",
+                            fontSize = 12.sp,
+                            color = Color.DarkGray,
+                            lineHeight = 17.sp
+                        )
                     }
                 }
             }
@@ -199,8 +226,8 @@ fun PerfilScreen(
         }
     }
 
-    // Modal de Apelación de Strike (RN12)
-    if (strikeAApelar != null) {
+    // Modal de Apelación de Strike (RN12) - Exclusivo para Donante o Receptora
+    if (esDonanteOReceptora && strikeAApelar != null) {
         val s = strikeAApelar!!
         AlertDialog(
             onDismissRequest = { strikeAApelar = null },
