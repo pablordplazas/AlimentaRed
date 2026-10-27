@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.example.alimentared.data.session.SessionManager
 import com.example.alimentared.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -21,13 +22,23 @@ fun MainAppScreen(
     onCrearLoteClick: () -> Unit,
     onCerrarSesion: () -> Unit
 ) {
-    var pestañaActual by remember { mutableStateOf(0) }
+    var pestañaActual by remember { mutableStateOf(1) } // Comienza en el catálogo de donaciones
+
+    val usuarioActual = remember {
+        try { SessionManager.getInstance().getUsuario() } catch (e: Exception) { null }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    Text("ALIMENTARED - $rolUsuario", fontWeight = FontWeight.Black, fontSize = 16.sp, color = Color.White)
+                    Text(
+                        "ALIMENTARED • ${usuarioActual?.organizacion?.nombre ?: usuarioActual?.nombre ?: rolUsuario}",
+                        fontWeight = FontWeight.Black,
+                        fontSize = 15.sp,
+                        color = Color.White,
+                        maxLines = 1
+                    )
                 },
                 actions = {
                     IconButton(onClick = onCerrarSesion) {
@@ -43,28 +54,35 @@ fun MainAppScreen(
                     selected = pestañaActual == 0,
                     onClick = { pestañaActual = 0 },
                     icon = { Icon(Icons.Default.Home, contentDescription = "Inicio") },
-                    label = { Text("Inicio", fontSize = 11.sp) },
+                    label = { Text("Inicio", fontSize = 10.sp) },
                     colors = NavigationBarItemDefaults.colors(selectedIconColor = RedPrimary, selectedTextColor = RedPrimary, unselectedIconColor = Color.Gray, unselectedTextColor = Color.Gray)
                 )
                 NavigationBarItem(
                     selected = pestañaActual == 1,
                     onClick = { pestañaActual = 1 },
-                    icon = { Icon(Icons.Default.VolunteerActivism, contentDescription = "Donaciones") },
-                    label = { Text("Donaciones", fontSize = 11.sp) },
+                    icon = { Icon(Icons.Default.VolunteerActivism, contentDescription = "Catálogo") },
+                    label = { Text("Catálogo", fontSize = 10.sp) },
                     colors = NavigationBarItemDefaults.colors(selectedIconColor = RedPrimary, selectedTextColor = RedPrimary, unselectedIconColor = Color.Gray, unselectedTextColor = Color.Gray)
                 )
                 NavigationBarItem(
                     selected = pestañaActual == 2,
                     onClick = { pestañaActual = 2 },
-                    icon = { Icon(Icons.Default.Info, contentDescription = "Nosotros") },
-                    label = { Text("Nosotros", fontSize = 11.sp) },
+                    icon = { Icon(Icons.Default.Assignment, contentDescription = "Solicitudes") },
+                    label = { Text("Solicitudes", fontSize = 10.sp) },
                     colors = NavigationBarItemDefaults.colors(selectedIconColor = RedPrimary, selectedTextColor = RedPrimary, unselectedIconColor = Color.Gray, unselectedTextColor = Color.Gray)
                 )
                 NavigationBarItem(
                     selected = pestañaActual == 3,
                     onClick = { pestañaActual = 3 },
-                    icon = { Icon(Icons.Default.ContactSupport, contentDescription = "Contacto") },
-                    label = { Text("Contacto", fontSize = 11.sp) },
+                    icon = { Icon(Icons.Default.ReportProblem, contentDescription = "Incidencias") },
+                    label = { Text("Calidad", fontSize = 10.sp) },
+                    colors = NavigationBarItemDefaults.colors(selectedIconColor = RedPrimary, selectedTextColor = RedPrimary, unselectedIconColor = Color.Gray, unselectedTextColor = Color.Gray)
+                )
+                NavigationBarItem(
+                    selected = pestañaActual == 4,
+                    onClick = { pestañaActual = 4 },
+                    icon = { Icon(Icons.Default.Person, contentDescription = "Perfil") },
+                    label = { Text("Impacto", fontSize = 10.sp) },
                     colors = NavigationBarItemDefaults.colors(selectedIconColor = RedPrimary, selectedTextColor = RedPrimary, unselectedIconColor = Color.Gray, unselectedTextColor = Color.Gray)
                 )
             }
@@ -78,8 +96,15 @@ fun MainAppScreen(
                     onLoteClick = onLoteClick,
                     onCrearLoteClick = onCrearLoteClick
                 )
-                2 -> NosotrosTabScreen()
-                3 -> ContactoTabScreen()
+                2 -> SolicitudesScreen(
+                    onVolver = { pestañaActual = 1 }
+                )
+                3 -> IncidenciasScreen(
+                    onBack = { pestañaActual = 1 }
+                )
+                4 -> PerfilScreen(
+                    onCerrarSesion = onCerrarSesion
+                )
             }
         }
     }
