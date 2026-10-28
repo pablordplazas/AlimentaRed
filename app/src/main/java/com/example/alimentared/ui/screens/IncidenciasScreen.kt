@@ -61,7 +61,7 @@ fun IncidenciasScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Reportes de Inocuidad (RF08)", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = BlueDark)
+                Text("Reportes de Inocuidad", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = BlueDark)
                 Button(
                     onClick = { mostrarFormulario = !mostrarFormulario },
                     colors = ButtonDefaults.buttonColors(containerColor = RedPrimary),
@@ -87,7 +87,7 @@ fun IncidenciasScreen(
                 Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Text("Reportar Problema en Lote", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = BlueDark)
-                        Text("El reporte bloqueará preventivamente el lote para evitar distribución de producto no inocuo (RF08).", fontSize = 11.sp, color = Color.Gray)
+                        Text("El reporte bloqueará preventivamente el lote para evitar distribución de producto no inocuo.", fontSize = 11.sp, color = Color.Gray)
 
                         OutlinedTextField(
                             value = nuevoLoteId,

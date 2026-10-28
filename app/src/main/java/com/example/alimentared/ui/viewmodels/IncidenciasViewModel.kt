@@ -6,6 +6,7 @@ import com.example.alimentared.data.model.IncidenciaRequest
 import com.example.alimentared.data.model.IncidenciaResponse
 import com.example.alimentared.data.model.ResolverIncidenciaRequest
 import com.example.alimentared.data.remote.RetrofitClient
+import com.example.alimentared.util.removerCodigosRegla
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -76,7 +77,7 @@ class IncidenciasViewModel : ViewModel() {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         reporteExitoso = true,
-                        mensaje = "Incidencia reportada. El lote fue bloqueado preventivamente (RF08)."
+                        mensaje = "Incidencia reportada. El lote fue bloqueado preventivamente."
                     )
                     cargarIncidencias()
                 } else {
@@ -118,7 +119,7 @@ class IncidenciasViewModel : ViewModel() {
             try {
                 val json = Gson().fromJson(body, JsonObject::class.java)
                 if (json.has("mensaje")) {
-                    return json.get("mensaje").asString
+                    return json.get("mensaje").asString.removerCodigosRegla()
                 }
             } catch (ignored: Exception) {}
         }

@@ -8,6 +8,7 @@ import com.example.alimentared.data.model.ResolverSolicitudRequest
 import com.example.alimentared.data.model.SolicitudResponse
 import com.example.alimentared.data.remote.RetrofitClient
 import com.example.alimentared.data.session.SessionManager
+import com.example.alimentared.util.removerCodigosRegla
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -124,7 +125,7 @@ class SolicitudesViewModel : ViewModel() {
                 if (res.isSuccessful) {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        mensajeExito = "Asignación cancelada por inasistencia. Se aplicó 1 strike y se reabasteció el inventario (RN08)."
+                        mensajeExito = "Asignación cancelada por inasistencia. Se aplicó 1 strike y se reabasteció el inventario."
                     )
                     cargarDatos()
                 } else {
@@ -142,7 +143,7 @@ class SolicitudesViewModel : ViewModel() {
             try {
                 val json = Gson().fromJson(body, JsonObject::class.java)
                 if (json.has("mensaje")) {
-                    return json.get("mensaje").asString
+                    return json.get("mensaje").asString.removerCodigosRegla()
                 }
             } catch (ignored: Exception) {}
         }

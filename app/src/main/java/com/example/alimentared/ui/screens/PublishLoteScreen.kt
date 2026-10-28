@@ -78,7 +78,7 @@ fun PublishLoteScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text("Detalles de la Oferta (RF03)", fontWeight = FontWeight.Black, fontSize = 16.sp, color = BlueDark)
+            Text("Detalles de la Oferta", fontWeight = FontWeight.Black, fontSize = 16.sp, color = BlueDark)
 
             if (uiState.error != null) {
                 Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFEE2E2)), modifier = Modifier.fillMaxWidth()) {

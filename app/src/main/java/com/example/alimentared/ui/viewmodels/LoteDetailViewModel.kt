@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.alimentared.data.model.LoteResponse
 import com.example.alimentared.data.model.SolicitudRequest
 import com.example.alimentared.data.remote.RetrofitClient
+import com.example.alimentared.util.removerCodigosRegla
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -96,7 +97,7 @@ class LoteDetailViewModel : ViewModel() {
         if (cant < lote.unidadMinima) {
             _uiState.value = _uiState.value.copy(
                 esValido = false,
-                mensajeValidacion = "La cantidad mínima a solicitar es de ${lote.unidadMinima} ${lote.unidadMedida} (RN05).",
+                mensajeValidacion = "La cantidad mínima a solicitar es de ${lote.unidadMinima} ${lote.unidadMedida}.",
                 cantidadCalculada = cant,
                 remanenteLote = remanente,
                 porcionesEstimadas = porciones
@@ -109,7 +110,7 @@ class LoteDetailViewModel : ViewModel() {
         if (!esMultiplo) {
             _uiState.value = _uiState.value.copy(
                 esValido = false,
-                mensajeValidacion = "Debe solicitar la unidad mínima más múltiplos de ${lote.multiplo} ${lote.unidadMedida} (RN05).",
+                mensajeValidacion = "Debe solicitar la unidad mínima más múltiplos de ${lote.multiplo} ${lote.unidadMedida}.",
                 cantidadCalculada = cant,
                 remanenteLote = remanente,
                 porcionesEstimadas = porciones
@@ -122,7 +123,7 @@ class LoteDetailViewModel : ViewModel() {
         if (!esRemanenteValido) {
             _uiState.value = _uiState.value.copy(
                 esValido = false,
-                mensajeValidacion = "El remanente que quedaría ($remanente ${lote.unidadMedida}) es menor a la unidad mínima (${lote.unidadMinima}). Ajuste su pedido o tome el lote completo (RN10).",
+                mensajeValidacion = "El remanente que quedaría ($remanente ${lote.unidadMedida}) es menor a la unidad mínima (${lote.unidadMinima}). Ajuste su pedido o tome el lote completo.",
                 cantidadCalculada = cant,
                 remanenteLote = remanente,
                 porcionesEstimadas = porciones
@@ -174,7 +175,7 @@ class LoteDetailViewModel : ViewModel() {
             try {
                 val json = Gson().fromJson(body, JsonObject::class.java)
                 if (json.has("mensaje")) {
-                    return json.get("mensaje").asString
+                    return json.get("mensaje").asString.removerCodigosRegla()
                 }
             } catch (ignored: Exception) {}
         }
