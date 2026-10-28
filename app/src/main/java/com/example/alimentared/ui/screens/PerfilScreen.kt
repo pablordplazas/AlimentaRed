@@ -23,7 +23,8 @@ import com.example.alimentared.ui.viewmodels.PerfilImpactoViewModel
 enum class PerfilSubVista {
     PERFIL,
     DETALLE_STRIKES,
-    PANEL_APELACIONES
+    PANEL_APELACIONES,
+    PANEL_VERIFICACION
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,6 +51,14 @@ fun PerfilScreen(
         }
         PerfilSubVista.PANEL_APELACIONES -> {
             PanelApelacionesScreen(
+                onBack = {
+                    subVista = PerfilSubVista.PERFIL
+                    viewModel.cargarDatos()
+                }
+            )
+        }
+        PerfilSubVista.PANEL_VERIFICACION -> {
+            PanelVerificacionOrganizacionesScreen(
                 onBack = {
                     subVista = PerfilSubVista.PERFIL
                     viewModel.cargarDatos()
@@ -91,6 +100,54 @@ fun PerfilScreen(
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(10.dp)
                             )
+                        }
+                    }
+
+                                        // 1. TARJETA DE ORGANIZACIÓN Y USUARIO
+                    // ESTADO DE VERIFICACIÓN INSTITUCIONAL (RF02)
+                    if (esDonanteOReceptora) {
+                        val estaVerificada = user?.organizacion?.verificada == true
+                        Card(
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (estaVerificada) Color(0xFFF0FDF4) else Color(0xFFFFFBEB)
+                            ),
+                            border = CardDefaults.outlinedCardBorder().copy(
+                                brush = androidx.compose.ui.graphics.SolidColor(
+                                    if (estaVerificada) Color(0xFF86EFAC) else Color(0xFFFDE68A)
+                                )
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        if (estaVerificada) Icons.Default.CheckCircle else Icons.Default.HourglassTop,
+                                        contentDescription = null,
+                                        tint = if (estaVerificada) Color(0xFF16A34A) else Color(0xFFD97706),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        if (estaVerificada) "Organización Verificada y Habilitada" else "Organización Pendiente de Aprobación",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp,
+                                        color = if (estaVerificada) Color(0xFF14532D) else Color(0xFF92400E)
+                                    )
+                                }
+                                Text(
+                                    if (estaVerificada) {
+                                        "Tu perfil ha sido verificado y aprobado por el Administrador. Estás plenamente habilitado para operar en AlimentaRed."
+                                    } else if (rol.contains("DONANTE")) {
+                                        "Tu cuenta está en proceso de revisión por el Administrador. Mientras tanto, puedes crear y guardar lotes como BORRADOR. Una vez aprobada tu organización, podrás publicarlos en el catálogo oficial."
+                                    } else {
+                                        "Tu fundación está en proceso de revisión por el Administrador. Puedes explorar el catálogo de donaciones en tiempo real; una vez aprobada tu cuenta, podrás solicitar alimentos."
+                                    },
+                                    fontSize = 11.sp,
+                                    color = if (estaVerificada) Color(0xFF166534) else Color(0xFF78350F),
+                                    lineHeight = 16.sp
+                                )
+                            }
                         }
                     }
 
@@ -235,7 +292,7 @@ fun PerfilScreen(
 
                                 Spacer(modifier = Modifier.height(2.dp))
 
-                                Button(
+                                                                Button(
                                     onClick = { subVista = PerfilSubVista.PANEL_APELACIONES },
                                     colors = ButtonDefaults.buttonColors(containerColor = RedPrimary),
                                     shape = RoundedCornerShape(8.dp),
@@ -244,6 +301,19 @@ fun PerfilScreen(
                                     Icon(Icons.Default.Gavel, contentDescription = null, modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text("⚖️ Abrir Panel de Gestión de Apelaciones", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                }
+
+                                if (rol.contains("ADMIN")) {
+                                    Button(
+                                        onClick = { subVista = PerfilSubVista.PANEL_VERIFICACION },
+                                        colors = ButtonDefaults.buttonColors(containerColor = BlueDark),
+                                        shape = RoundedCornerShape(8.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Icon(Icons.Default.VerifiedUser, contentDescription = null, modifier = Modifier.size(16.dp))
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text("🏢 Aprobación y Verificación de Organizaciones", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    }
                                 }
                             }
                         }

@@ -170,6 +170,33 @@ class LoteDetailViewModel : ViewModel() {
         }
     }
 
+        fun publicarBorrador(loteId: Long, onExito: () -> Unit = {}) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isSubmitting = true, errorOperacion = null)
+            try {
+                val res = RetrofitClient.instance.publicarLote(loteId)
+                if (res.isSuccessful && res.body() != null) {
+                    _uiState.value = _uiState.value.copy(
+                        isSubmitting = false,
+                        lote = res.body()!!
+                    )
+                    onExito()
+                } else {
+                    val errorMsg = parseErrorBody(res.code(), res.errorBody()?.string())
+                    _uiState.value = _uiState.value.copy(
+                        isSubmitting = false,
+                        errorOperacion = errorMsg
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isSubmitting = false,
+                    errorOperacion = "Error al publicar borrador: ${e.localizedMessage}"
+                )
+            }
+        }
+    }
+
     private fun parseErrorBody(code: Int, body: String?): String {
         if (!body.isNullOrBlank()) {
             try {

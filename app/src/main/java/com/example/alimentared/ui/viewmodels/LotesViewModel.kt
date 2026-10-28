@@ -10,6 +10,17 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+enum class ModoVistaLotes {
+    MIS_PUBLICACIONES,
+    CATALOGO_GENERAL
+}
+
+enum class FiltroEstadoMisLotes(val estadoBackend: String?, val label: String) {
+    TODAS(null, "Todas"),
+    BORRADORES("BORRADOR", "Borradores"),
+    PUBLICADAS("DISPONIBLE", "Publicadas")
+}
+
 data class LotesUiState(
     val isLoading: Boolean = false,
     val lotes: List<LoteResponse> = emptyList(),
@@ -17,6 +28,8 @@ data class LotesUiState(
     val categoriaSeleccionada: Long? = null,
     val soloUrgentes: Boolean = false,
     val searchQuery: String = "",
+    val modoVista: ModoVistaLotes = ModoVistaLotes.CATALOGO_GENERAL,
+    val filtroEstadoMisLotes: FiltroEstadoMisLotes = FiltroEstadoMisLotes.TODAS,
     val error: String? = null
 )
 
@@ -27,6 +40,18 @@ class LotesViewModel : ViewModel() {
 
     init {
         cargarCategorias()
+        cargarLotes()
+    }
+
+    fun setModoVista(modo: ModoVistaLotes) {
+        if (_uiState.value.modoVista != modo) {
+            _uiState.value = _uiState.value.copy(modoVista = modo)
+            cargarLotes()
+        }
+    }
+
+    fun setFiltroEstadoMisLotes(filtro: FiltroEstadoMisLotes) {
+        _uiState.value = _uiState.value.copy(filtroEstadoMisLotes = filtro)
         cargarLotes()
     }
 
@@ -45,32 +70,61 @@ class LotesViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
-                val catId = _uiState.value.categoriaSeleccionada
-                val urgentes = if (_uiState.value.soloUrgentes) true else null
-                val query = if (_uiState.value.searchQuery.isBlank()) null else _uiState.value.searchQuery.trim()
-
-                val res = RetrofitClient.instance.getLotes(
-                    categoriaId = catId,
-                    rescateUrgente = urgentes,
-                    query = query,
-                    page = 0,
-                    size = 50
-                )
-                if (res.isSuccessful && res.body() != null) {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        lotes = res.body()!!.contenido
+                if (_uiState.value.modoVista == ModoVistaLotes.MIS_PUBLICACIONES) {
+                    val estadoParam = _uiState.value.filtroEstadoMisLotes.estadoBackend
+                    val res = RetrofitClient.instance.getMisLotes(
+                        estado = estadoParam,
+                        page = 0,
+                        size = 50
                     )
+                    if (res.isSuccessful && res.body() != null) {
+                        var lista = res.body()!!.contenido
+                        val query = _uiState.value.searchQuery.trim().lowercase()
+                        if (query.isNotBlank()) {
+                            lista = lista.filter {
+                                it.nombre.lowercase().contains(query) ||
+                                it.descripcion.lowercase().contains(query) ||
+                                (it.categoriaNombre?.lowercase()?.contains(query) == true)
+                            }
+                        }
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            lotes = lista
+                        )
+                    } else {
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            error = "No se pudieron obtener tus publicaciones (${res.code()})"
+                        )
+                    }
                 } else {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = "No se pudieron obtener los lotes disponibles (${res.code()})"
+                    val catId = _uiState.value.categoriaSeleccionada
+                    val urgentes = if (_uiState.value.soloUrgentes) true else null
+                    val query = if (_uiState.value.searchQuery.isBlank()) null else _uiState.value.searchQuery.trim()
+
+                    val res = RetrofitClient.instance.getLotes(
+                        categoriaId = catId,
+                        rescateUrgente = urgentes,
+                        query = query,
+                        page = 0,
+                        size = 50
                     )
+                    if (res.isSuccessful && res.body() != null) {
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            lotes = res.body()!!.contenido
+                        )
+                    } else {
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            error = "No se pudieron obtener los lotes disponibles (${res.code()})"
+                        )
+                    }
                 }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = "Fallo de conexión al cargar catálogo: ${e.localizedMessage}"
+                    error = "Fallo de conexión: ${e.localizedMessage}"
                 )
             }
         }

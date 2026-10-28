@@ -133,11 +133,15 @@ fun MainAppScreen(
         ) {
             when (pestañaActual) {
                 0 -> InicioTabScreen()
-                1 -> DonacionesTabScreen(
-                    rolUsuario = rolNormalized,
-                    onLoteClick = onLoteClick,
-                    onCrearLoteClick = onCrearLoteClick
-                )
+                1 -> if (esAdmin) {
+                    PanelVerificacionOrganizacionesScreen()
+                } else {
+                    DonacionesTabScreen(
+                        rolUsuario = rolNormalized,
+                        onLoteClick = onLoteClick,
+                        onCrearLoteClick = onCrearLoteClick
+                    )
+                }
                 2 -> when (rolNormalized) {
                     "COORDINADOR", "ADMINISTRADOR" -> PanelApelacionesScreen(onBack = { pestañaActual = 0 })
                     else -> SolicitudesScreen(onVolver = { pestañaActual = 1 })

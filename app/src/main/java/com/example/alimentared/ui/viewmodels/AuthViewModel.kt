@@ -66,6 +66,9 @@ class AuthViewModel : ViewModel() {
             }
         }
     }
+    fun setError(mensaje: String) {
+        _uiState.value = _uiState.value.copy(error = mensaje)
+    }
 
     fun register(
         nit: String,
@@ -81,14 +84,17 @@ class AuthViewModel : ViewModel() {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
                 val req = RegisterRequest(
-                    nit = nit.trim(),
-                    organizacionNombre = orgNombre.trim(),
-                    correoOrganizacion = correoOrg.trim(),
-                    telefono = telefono?.trim(),
-                    ubicacion = ubicacion?.trim(),
-                    nombreContacto = nombreContacto.trim(),
+                    nombre = nombreContacto.trim(),
+                    correo = correoOrg.trim().lowercase(),
                     contrasena = contrasena,
-                    rol = rol
+                    rol = rol.trim().uppercase(),
+                    organizacion = com.example.alimentared.data.model.OrganizacionRegisterDto(
+                        nit = nit.trim(),
+                        nombre = orgNombre.trim(),
+                        correo = correoOrg.trim().lowercase(),
+                        telefono = if (telefono.isNullOrBlank()) null else telefono.trim(),
+                        ubicacion = if (ubicacion.isNullOrBlank()) null else ubicacion.trim()
+                    )
                 )
                 val response = RetrofitClient.instance.register(req)
                 if (response.isSuccessful && response.body() != null) {
@@ -131,11 +137,43 @@ class AuthViewModel : ViewModel() {
         if (!body.isNullOrBlank()) {
             try {
                 val json = Gson().fromJson(body, JsonObject::class.java)
+
+                // 1. Extraer detalles específicos de validación por campo si el backend los provee
+                if (json.has("detalles") && json.get("detalles").isJsonArray) {
+                    val array = json.getAsJsonArray("detalles")
+                    if (array.size() > 0) {
+                        val errores = mutableListOf<String>()
+                        for (elem in array) {
+                            val detalle = elem.asString
+                            val formateado = detalle
+                                .replace("organizacion.nit", "NIT")
+                                .replace("nit", "NIT")
+                                .replace("organizacion.nombre", "Nombre de la Organización")
+                                .replace("organizacion.correo", "Correo Electrónico")
+                                .replace("organizacion.telefono", "Teléfono")
+                                .replace("nombre", "Nombre del Representante")
+                                .replace("correo", "Correo Electrónico")
+                                .replace("contrasena", "Contraseña")
+                                .replace("rol", "Tipo de Organización")
+                            errores.add("• $formateado")
+                        }
+                        return "Por favor corrige los siguientes campos:\n" + errores.joinToString("\n")
+                    }
+                }
+
+                // 2. Extraer mensaje general de regla de negocio o recurso duplicado
                 if (json.has("mensaje")) {
-                    return json.get("mensaje").asString.removerCodigosRegla()
+                    val msg = json.get("mensaje").asString.removerCodigosRegla()
+                    if (msg.isNotBlank() && !msg.equals("Datos de entrada inválidos", ignoreCase = true)) {
+                        return msg
+                    }
                 }
             } catch (ignored: Exception) {}
         }
-        return "Error en la solicitud (Código HTTP: $code)"
+        return if (code == 400) {
+            "Datos de entrada inválidos. Revisa que el NIT, correo y contraseña cumplan el formato requerido."
+        } else {
+            "Error en la solicitud (Código HTTP: $code)"
+        }
     }
 }

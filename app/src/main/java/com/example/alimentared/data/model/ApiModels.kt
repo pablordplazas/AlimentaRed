@@ -18,15 +18,20 @@ data class LoginRequest(
     val contrasena: String
 )
 
-data class RegisterRequest(
+data class OrganizacionRegisterDto(
     val nit: String,
-    val organizacionNombre: String,
-    val correoOrganizacion: String,
+    val nombre: String,
+    val correo: String,
     val telefono: String? = null,
-    val ubicacion: String? = null,
-    val nombreContacto: String,
+    val ubicacion: String? = null
+)
+
+data class RegisterRequest(
+    val nombre: String,
+    val correo: String,
     val contrasena: String,
-    val rol: String // "DONANTE" o "RECEPTORA"
+    val rol: String, // "DONANTE" o "RECEPTORA"
+    val organizacion: OrganizacionRegisterDto
 )
 
 data class AuthResponse(

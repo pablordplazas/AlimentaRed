@@ -13,6 +13,8 @@ import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Science
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -43,6 +46,7 @@ fun LoginScreen(
     // Campos Login (en modo normal inician vacíos; en pruebas pueden iniciar con receptora)
     var email by remember { mutableStateOf(if (esModoPruebas) "receptora@pancompartido.org" else "") }
     var password by remember { mutableStateOf(if (esModoPruebas) "Pass12345" else "") }
+    var showLoginPassword by remember { mutableStateOf(false) }
 
     // Campos Registro
     var regNit by remember { mutableStateOf("") }
@@ -53,6 +57,97 @@ fun LoginScreen(
     var regContacto by remember { mutableStateOf("") }
     var regPassword by remember { mutableStateOf("") }
     var regRol by remember { mutableStateOf("RECEPTORA") }
+
+    // Estados de validación por campo
+    var errorNit by remember { mutableStateOf<String?>(null) }
+    var errorNombreOrg by remember { mutableStateOf<String?>(null) }
+    var errorCorreoOrg by remember { mutableStateOf<String?>(null) }
+    var errorContacto by remember { mutableStateOf<String?>(null) }
+    var errorPassword by remember { mutableStateOf<String?>(null) }
+    var showRegisterPassword by remember { mutableStateOf(false) }
+
+    fun limpiarErroresLocales() {
+        errorNit = null
+        errorNombreOrg = null
+        errorCorreoOrg = null
+        errorContacto = null
+        errorPassword = null
+    }
+
+    fun validarCamposRegistro(): Boolean {
+        limpiarErroresLocales()
+        var esValido = true
+        var primerError: String? = null
+
+        // 1. NIT: numérico de 6 a 15 dígitos (opcional dígito de verificación con guion)
+        val nitLimpio = regNit.trim()
+        if (nitLimpio.isBlank()) {
+            errorNit = "El NIT es obligatorio"
+            if (primerError == null) primerError = "El campo NIT es obligatorio"
+            esValido = false
+        } else if (!Regex("^[0-9]{6,15}(-[0-9])?$").matches(nitLimpio)) {
+            errorNit = "Debe tener entre 6 y 15 dígitos numéricos (ej. 900123456-7)"
+            if (primerError == null) primerError = "NIT inválido: debe tener entre 6 y 15 dígitos numéricos (ej. 900123456-7)"
+            esValido = false
+        }
+
+        // 2. Nombre de la Organización: mínimo 3 caracteres
+        val nombreOrgLimpio = regNombreOrg.trim()
+        if (nombreOrgLimpio.isBlank()) {
+            errorNombreOrg = "El nombre de la organización es obligatorio"
+            if (primerError == null) primerError = "El nombre de la organización es obligatorio"
+            esValido = false
+        } else if (nombreOrgLimpio.length < 3) {
+            errorNombreOrg = "El nombre es muy corto (mínimo 3 caracteres)"
+            if (primerError == null) primerError = "El nombre de la organización es muy corto (mínimo 3 caracteres)"
+            esValido = false
+        }
+
+        // 3. Correo Electrónico
+        val correoLimpio = regCorreoOrg.trim()
+        if (correoLimpio.isBlank()) {
+            errorCorreoOrg = "El correo electrónico es obligatorio"
+            if (primerError == null) primerError = "El correo electrónico es obligatorio"
+            esValido = false
+        } else if (!Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$").matches(correoLimpio)) {
+            errorCorreoOrg = "Formato de correo no válido (ej. contacto@organizacion.com)"
+            if (primerError == null) primerError = "Ingresa un correo electrónico válido (ej. contacto@organizacion.com)"
+            esValido = false
+        }
+
+        // 4. Nombre del Representante: mínimo 3 caracteres
+        val contactoLimpio = regContacto.trim()
+        if (contactoLimpio.isBlank()) {
+            errorContacto = "El nombre del representante es obligatorio"
+            if (primerError == null) primerError = "El nombre del representante es obligatorio"
+            esValido = false
+        } else if (contactoLimpio.length < 3) {
+            errorContacto = "El nombre es muy corto (mínimo 3 caracteres)"
+            if (primerError == null) primerError = "El nombre del representante es muy corto (mínimo 3 caracteres)"
+            esValido = false
+        }
+
+        // 5. Contraseña: mínimo 8 caracteres, letras y números
+        if (regPassword.isBlank()) {
+            errorPassword = "La contraseña es obligatoria"
+            if (primerError == null) primerError = "La contraseña es obligatoria"
+            esValido = false
+        } else if (regPassword.length < 8) {
+            errorPassword = "La contraseña es muy corta (mínimo 8 caracteres)"
+            if (primerError == null) primerError = "La contraseña es muy corta (debe tener al menos 8 caracteres)"
+            esValido = false
+        } else if (!regPassword.any { it.isLetter() } || !regPassword.any { it.isDigit() }) {
+            errorPassword = "Debe contener tanto letras como números (ej. Pass12345)"
+            if (primerError == null) primerError = "La contraseña debe contener letras y números (ej. Pass12345)"
+            esValido = false
+        }
+
+        if (!esValido && primerError != null) {
+            authViewModel.setError(primerError)
+        }
+
+        return esValido
+    }
 
     // Cuentas de prueba rápidas corregidas
     val accesosRapidos = listOf(
@@ -121,6 +216,7 @@ fun LoginScreen(
                 )
                 TextButton(onClick = {
                     modoRegistro = !modoRegistro
+                    limpiarErroresLocales()
                     authViewModel.limpiarError()
                 }) {
                     Text(
@@ -199,8 +295,9 @@ fun LoginScreen(
 
                 OutlinedTextField(
                     value = email,
-                    onValueChange = { email = it },
+                    onValueChange = { email = it; authViewModel.limpiarError() },
                     label = { Text("Correo Electrónico") },
+                    placeholder = { Text("ejemplo@organizacion.com") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -211,10 +308,19 @@ fun LoginScreen(
 
                 OutlinedTextField(
                     value = password,
-                    onValueChange = { password = it },
+                    onValueChange = { password = it; authViewModel.limpiarError() },
                     label = { Text("Contraseña") },
                     singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
+                    visualTransformation = if (showLoginPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { showLoginPassword = !showLoginPassword }) {
+                            Icon(
+                                if (showLoginPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = if (showLoginPassword) "Ocultar contraseña" else "Mostrar contraseña",
+                                tint = Color.Gray
+                            )
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = RedPrimary,
@@ -251,76 +357,164 @@ fun LoginScreen(
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     FilterChip(
                         selected = regRol == "RECEPTORA",
-                        onClick = { regRol = "RECEPTORA" },
+                        onClick = { regRol = "RECEPTORA"; authViewModel.limpiarError() },
                         label = { Text("Fundación Receptora") },
                         colors = FilterChipDefaults.filterChipColors(selectedContainerColor = RedPrimary.copy(alpha = 0.15f), selectedLabelColor = RedPrimary)
                     )
                     FilterChip(
                         selected = regRol == "DONANTE",
-                        onClick = { regRol = "DONANTE" },
+                        onClick = { regRol = "DONANTE"; authViewModel.limpiarError() },
                         label = { Text("Comercio Donante") },
                         colors = FilterChipDefaults.filterChipColors(selectedContainerColor = RedPrimary.copy(alpha = 0.15f), selectedLabelColor = RedPrimary)
                     )
                 }
 
+                // 1. NIT
                 OutlinedTextField(
                     value = regNit,
-                    onValueChange = { regNit = it },
+                    onValueChange = {
+                        regNit = it
+                        errorNit = null
+                        authViewModel.limpiarError()
+                    },
                     label = { Text("NIT / Identificación Fiscal") },
+                    placeholder = { Text("Ej: 900123456-7") },
                     singleLine = true,
+                    isError = errorNit != null,
+                    supportingText = if (errorNit != null) {
+                        { Text(errorNit!!, color = RedPrimary, fontSize = 11.sp) }
+                    } else null,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RedPrimary, focusedLabelColor = RedPrimary)
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = RedPrimary,
+                        focusedLabelColor = RedPrimary,
+                        errorBorderColor = RedPrimary,
+                        errorLabelColor = RedPrimary
+                    )
                 )
 
+                // 2. Nombre de la Organización
                 OutlinedTextField(
                     value = regNombreOrg,
-                    onValueChange = { regNombreOrg = it },
+                    onValueChange = {
+                        regNombreOrg = it
+                        errorNombreOrg = null
+                        authViewModel.limpiarError()
+                    },
                     label = { Text("Nombre de la Organización") },
+                    placeholder = { Text("Ej: Nikopolleria") },
                     singleLine = true,
+                    isError = errorNombreOrg != null,
+                    supportingText = if (errorNombreOrg != null) {
+                        { Text(errorNombreOrg!!, color = RedPrimary, fontSize = 11.sp) }
+                    } else null,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RedPrimary, focusedLabelColor = RedPrimary)
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = RedPrimary,
+                        focusedLabelColor = RedPrimary,
+                        errorBorderColor = RedPrimary,
+                        errorLabelColor = RedPrimary
+                    )
                 )
 
+                // 3. Correo Electrónico
                 OutlinedTextField(
                     value = regCorreoOrg,
-                    onValueChange = { regCorreoOrg = it },
-                    label = { Text("Correo Institucional") },
+                    onValueChange = {
+                        regCorreoOrg = it
+                        errorCorreoOrg = null
+                        authViewModel.limpiarError()
+                    },
+                    label = { Text("Correo Electrónico") },
+                    placeholder = { Text("ejemplo@organizacion.com") },
                     singleLine = true,
+                    isError = errorCorreoOrg != null,
+                    supportingText = if (errorCorreoOrg != null) {
+                        { Text(errorCorreoOrg!!, color = RedPrimary, fontSize = 11.sp) }
+                    } else null,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RedPrimary, focusedLabelColor = RedPrimary)
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = RedPrimary,
+                        focusedLabelColor = RedPrimary,
+                        errorBorderColor = RedPrimary,
+                        errorLabelColor = RedPrimary
+                    )
                 )
 
+                // 4. Nombre del Representante
                 OutlinedTextField(
                     value = regContacto,
-                    onValueChange = { regContacto = it },
+                    onValueChange = {
+                        regContacto = it
+                        errorContacto = null
+                        authViewModel.limpiarError()
+                    },
                     label = { Text("Nombre del Representante") },
+                    placeholder = { Text("Ej: Nicolas Rodriguez") },
                     singleLine = true,
+                    isError = errorContacto != null,
+                    supportingText = if (errorContacto != null) {
+                        { Text(errorContacto!!, color = RedPrimary, fontSize = 11.sp) }
+                    } else null,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RedPrimary, focusedLabelColor = RedPrimary)
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = RedPrimary,
+                        focusedLabelColor = RedPrimary,
+                        errorBorderColor = RedPrimary,
+                        errorLabelColor = RedPrimary
+                    )
                 )
 
+                // 5. Contraseña
                 OutlinedTextField(
                     value = regPassword,
-                    onValueChange = { regPassword = it },
-                    label = { Text("Contraseña (mínimo 6 caracteres)") },
+                    onValueChange = {
+                        regPassword = it
+                        errorPassword = null
+                        authViewModel.limpiarError()
+                    },
+                    label = { Text("Contraseña (mínimo 8 caracteres)") },
+                    placeholder = { Text("Mínimo 8 letras y números") },
                     singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
+                    visualTransformation = if (showRegisterPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { showRegisterPassword = !showRegisterPassword }) {
+                            Icon(
+                                if (showRegisterPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = if (showRegisterPassword) "Ocultar contraseña" else "Mostrar contraseña",
+                                tint = Color.Gray
+                            )
+                        }
+                    },
+                    isError = errorPassword != null,
+                    supportingText = if (errorPassword != null) {
+                        { Text(errorPassword!!, color = RedPrimary, fontSize = 11.sp) }
+                    } else {
+                        { Text("Debe tener al menos 8 caracteres, combinando letras y números.", color = Color.Gray, fontSize = 10.sp) }
+                    },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RedPrimary, focusedLabelColor = RedPrimary)
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = RedPrimary,
+                        focusedLabelColor = RedPrimary,
+                        errorBorderColor = RedPrimary,
+                        errorLabelColor = RedPrimary
+                    )
                 )
 
                 Button(
                     onClick = {
-                        authViewModel.register(
-                            nit = regNit,
-                            orgNombre = regNombreOrg,
-                            correoOrg = regCorreoOrg,
-                            telefono = regTelefono,
-                            ubicacion = regUbicacion,
-                            nombreContacto = regContacto,
-                            contrasena = regPassword,
-                            rol = regRol
-                        )
+                        if (validarCamposRegistro()) {
+                            authViewModel.register(
+                                nit = regNit,
+                                orgNombre = regNombreOrg,
+                                correoOrg = regCorreoOrg,
+                                telefono = regTelefono,
+                                ubicacion = regUbicacion,
+                                nombreContacto = regContacto,
+                                contrasena = regPassword,
+                                rol = regRol
+                            )
+                        }
                     },
                     enabled = !uiState.isLoading,
                     modifier = Modifier

@@ -9,6 +9,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Publish
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -31,6 +32,10 @@ fun PublishLoteScreen(
     onBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+
+        val sessionManager = remember { com.example.alimentared.data.session.SessionManager.getInstance() }
+    val usuarioActual = remember { sessionManager.getUsuario() }
+    val orgVerificada = usuarioActual?.organizacion?.verificada ?: false
 
     var nombre by remember { mutableStateOf("") }
     var descripcion by remember { mutableStateOf("") }
@@ -82,7 +87,26 @@ fun PublishLoteScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text("Detalles de la Oferta", fontWeight = FontWeight.Black, fontSize = 16.sp, color = BlueDark)
+                                Text("Detalles de la Oferta", fontWeight = FontWeight.Black, fontSize = 16.sp, color = BlueDark)
+
+                if (!orgVerificada) {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFBEB)),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Info, contentDescription = null, tint = Color(0xFFD97706), modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                "Modo Borrador: Tu organización está en proceso de verificación por el Administrador. Este lote se guardará como BORRADOR y podrás publicarlo en el catálogo oficial en cuanto tu perfil sea aprobado.",
+                                color = Color(0xFF92400E),
+                                fontSize = 11.sp,
+                                lineHeight = 16.sp
+                            )
+                        }
+                    }
+                }
 
                 if (uiState.error != null) {
                     Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFEE2E2)), modifier = Modifier.fillMaxWidth()) {
@@ -226,7 +250,7 @@ fun PublishLoteScreen(
                     } else {
                         Icon(Icons.Default.Publish, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Publicar Donación en Catálogo", fontWeight = FontWeight.Bold, color = Color.White)
+                        Text(if (orgVerificada) "Publicar Donación en Catálogo" else "Guardar Lote como Borrador", fontWeight = FontWeight.Bold, color = Color.White)
                     }
                 }
             }
