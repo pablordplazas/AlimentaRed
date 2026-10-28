@@ -50,13 +50,26 @@ class SessionManager private constructor(context: Context) {
     }
 
     fun getServerUrl(): String {
-        return prefs.getString(KEY_SERVER_URL, DEFAULT_SERVER_URL) ?: DEFAULT_SERVER_URL
+        val saved = prefs.getString(KEY_SERVER_URL, null)
+        // Migrar automáticamente a Render Cloud si no hay guardada o si tenía una IP local antigua
+        if (saved == null || saved.contains("192.168.1.18") || saved.contains("10.0.2.2") || saved.contains("127.0.0.1")) {
+            setServerUrl(DEFAULT_SERVER_URL)
+            return DEFAULT_SERVER_URL
+        }
+        return saved
     }
 
     fun setServerUrl(url: String) {
         var formatted = url.trim()
         if (!formatted.startsWith("http://") && !formatted.startsWith("https://")) {
-            formatted = "http://$formatted"
+            formatted = if (formatted.contains("onrender.com") || formatted.contains(".com")) {
+                "https://$formatted"
+            } else {
+                "http://$formatted"
+            }
+        }
+        if (formatted.startsWith("http://pr-alimentared.onrender.com")) {
+            formatted = formatted.replaceFirst("http://", "https://")
         }
         if (!formatted.endsWith("/")) {
             formatted = "$formatted/"
@@ -79,7 +92,7 @@ class SessionManager private constructor(context: Context) {
         private const val KEY_USER_JSON = "user_json"
         private const val KEY_ROLE = "user_role"
         private const val KEY_SERVER_URL = "server_url"
-        const val DEFAULT_SERVER_URL = "http://192.168.1.18:8080/api/"
+        const val DEFAULT_SERVER_URL = "https://pr-alimentared.onrender.com/api/"
 
         @Volatile
         private var INSTANCE: SessionManager? = null

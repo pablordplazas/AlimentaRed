@@ -381,6 +381,11 @@ fun LoginScreen(
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         FilterChip(
+                            selected = urlTemp.contains("onrender.com"),
+                            onClick = { urlTemp = "https://pr-alimentared.onrender.com/api/" },
+                            label = { Text("Render Cloud", fontSize = 10.sp) }
+                        )
+                        FilterChip(
                             selected = urlTemp.contains("192.168.1.18"),
                             onClick = { urlTemp = "http://192.168.1.18:8080/api/" },
                             label = { Text("IP Local", fontSize = 10.sp) }
@@ -389,11 +394,6 @@ fun LoginScreen(
                             selected = urlTemp.contains("10.0.2.2"),
                             onClick = { urlTemp = "http://10.0.2.2:8080/api/" },
                             label = { Text("10.0.2.2", fontSize = 10.sp) }
-                        )
-                        FilterChip(
-                            selected = urlTemp.contains("127.0.0.1"),
-                            onClick = { urlTemp = "http://127.0.0.1:8080/api/" },
-                            label = { Text("ADB Reverse", fontSize = 10.sp) }
                         )
                     }
 

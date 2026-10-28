@@ -166,8 +166,8 @@ interface ApiService {
 }
 
 object RetrofitClient {
-    // Por defecto usa la IP local del host (192.168.1.18:8080) que funciona garantizada en emulador y físico
-    var baseUrl: String = "http://192.168.1.18:8080/api/"
+    // URL base por defecto apuntando a la nube en Render
+    var baseUrl: String = "https://pr-alimentared.onrender.com/api/"
         private set
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
@@ -197,7 +197,14 @@ object RetrofitClient {
     fun updateBaseUrl(newUrl: String) {
         var formatted = newUrl.trim()
         if (!formatted.startsWith("http://") && !formatted.startsWith("https://")) {
-            formatted = "http://$formatted"
+            formatted = if (formatted.contains("onrender.com") || formatted.contains(".com")) {
+                "https://$formatted"
+            } else {
+                "http://$formatted"
+            }
+        }
+        if (formatted.startsWith("http://pr-alimentared.onrender.com")) {
+            formatted = formatted.replaceFirst("http://", "https://")
         }
         if (!formatted.endsWith("/")) {
             formatted = "$formatted/"
