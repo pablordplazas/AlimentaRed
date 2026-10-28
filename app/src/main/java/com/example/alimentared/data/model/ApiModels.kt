@@ -259,3 +259,19 @@ data class HistorialEstadoResponse(
     val fecha: String,
     val justificacion: String? = null
 )
+
+data class CambioContrasenaRequest(
+    val contrasenaActual: String,
+    val contrasenaNueva: String
+)
+
+data class UsuarioInternoRequest(
+    val nombre: String,
+    val correo: String,
+    val contrasena: String,
+    val rol: String
+)
+
+data class CancelacionRequest(
+    val motivo: String? = null
+)

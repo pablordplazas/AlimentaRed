@@ -21,6 +21,12 @@ interface ApiService {
     @GET("usuarios/me")
     suspend fun getPerfil(): Response<UsuarioResponse>
 
+    @PATCH("usuarios/me/contrasena")
+    suspend fun cambiarContrasena(@Body request: CambioContrasenaRequest): Response<Unit>
+
+    @POST("usuarios")
+    suspend fun crearUsuarioInterno(@Body request: UsuarioInternoRequest): Response<UsuarioResponse>
+
     @GET("health")
     suspend fun checkHealth(): Response<Map<String, Any>>
 
@@ -32,6 +38,8 @@ interface ApiService {
     @GET("lotes")
     suspend fun getLotes(
         @Query("categoriaId") categoriaId: Long? = null,
+        @Query("ubicacion") ubicacion: String? = null,
+        @Query("estado") estado: String? = null,
         @Query("rescateUrgente") rescateUrgente: Boolean? = null,
         @Query("query") query: String? = null,
         @Query("page") page: Int = 0,
@@ -51,8 +59,14 @@ interface ApiService {
     @POST("lotes")
     suspend fun crearLote(@Body request: LoteRequest): Response<LoteResponse>
 
-    @DELETE("lotes/{id}")
-    suspend fun cancelarLote(@Path("id") id: Long): Response<Unit>
+    @PUT("lotes/{id}")
+    suspend fun actualizarLote(@Path("id") id: Long, @Body request: LoteRequest): Response<LoteResponse>
+
+    @PATCH("lotes/{id}/publicar")
+    suspend fun publicarLote(@Path("id") id: Long): Response<LoteResponse>
+
+    @PATCH("lotes/{id}/cancelar")
+    suspend fun cancelarLote(@Path("id") id: Long, @Body request: CancelacionRequest? = null): Response<LoteResponse>
 
     @GET("lotes/{id}/historial")
     suspend fun getHistorialLote(@Path("id") id: Long): Response<List<HistorialEstadoResponse>>
@@ -87,7 +101,7 @@ interface ApiService {
     ): Response<SolicitudResponse>
 
     @PATCH("solicitudes/{id}/cancelar")
-    suspend fun cancelarSolicitud(@Path("id") id: Long): Response<SolicitudResponse>
+    suspend fun cancelarSolicitud(@Path("id") id: Long, @Body request: CancelacionRequest? = null): Response<SolicitudResponse>
 
     // --- ASIGNACIONES Y ENTREGAS (RF07, RN08, RN11, RN12) ---
     @GET("entregas/asignaciones")
@@ -108,8 +122,11 @@ interface ApiService {
     @PATCH("entregas/{asignacionId}/no-recogida")
     suspend fun reportarNoRecogida(
         @Path("asignacionId") asignacionId: Long,
-        @Body request: Map<String, String> = mapOf("motivo" to "Inasistencia de retiro físico")
+        @Body request: Map<String, String> = mapOf("observaciones" to "Inasistencia de retiro físico")
     ): Response<AsignacionResponse>
+
+    @PATCH("entregas/{asignacionId}/restock")
+    suspend fun restockAsignacion(@Path("asignacionId") asignacionId: Long): Response<AsignacionResponse>
 
     @GET("entregas/asignaciones/{asignacionId}/retiros")
     suspend fun getRetirosPorAsignacion(@Path("asignacionId") asignacionId: Long): Response<List<EntregaResponse>>
@@ -135,13 +152,23 @@ interface ApiService {
     ): Response<IncidenciaResponse>
 
     // --- ORGANIZACIONES Y STRIKES (RF02, RN08, RN12) ---
+    @GET("organizaciones")
+    suspend fun getOrganizaciones(
+        @Query("verificada") verificada: Boolean? = null,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20
+    ): Response<PageResponse<OrganizacionResponse>>
+
     @GET("organizaciones/{id}")
     suspend fun getOrganizacionPorId(@Path("id") id: Long): Response<OrganizacionResponse>
+
+    @PATCH("organizaciones/{id}/verificar")
+    suspend fun verificarOrganizacion(@Path("id") id: Long): Response<OrganizacionResponse>
 
     @GET("organizaciones/{id}/strikes")
     suspend fun getStrikesPorOrganizacion(@Path("id") id: Long): Response<List<StrikeResponse>>
 
-    @GET("organizaciones/strikes/todos")
+    @GET("organizaciones/strikes")
     suspend fun getTodosLosStrikes(): Response<List<StrikeResponse>>
 
     @PATCH("organizaciones/{id}/strikes/apelar")
@@ -160,6 +187,9 @@ interface ApiService {
 
     @GET("reportes/historial")
     suspend fun getHistorialEntregas(
+        @Query("desde") desde: String? = null,
+        @Query("hasta") hasta: String? = null,
+        @Query("categoriaId") categoriaId: Long? = null,
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 20
     ): Response<PageResponse<EntregaResponse>>

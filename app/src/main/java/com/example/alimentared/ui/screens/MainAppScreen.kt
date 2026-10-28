@@ -22,10 +22,51 @@ fun MainAppScreen(
     onCrearLoteClick: () -> Unit,
     onCerrarSesion: () -> Unit
 ) {
-    var pestañaActual by remember { mutableStateOf(1) } // Comienza en el catálogo de donaciones
+    var pestañaActual by remember { mutableStateOf(0) }
 
     val usuarioActual = remember {
         try { SessionManager.getInstance().getUsuario() } catch (e: Exception) { null }
+    }
+
+    val rolNormalized = rolUsuario.uppercase()
+
+    // Definir pestañas dinámicas según el rol del usuario
+    val tabs = when (rolNormalized) {
+        "DONANTE" -> listOf(
+            Triple("Inicio", Icons.Default.Home, 0),
+            Triple("Mis Lotes", Icons.Default.Store, 1),
+            Triple("Solicitudes", Icons.Default.Assignment, 2),
+            Triple("Calidad", Icons.Default.ReportProblem, 3),
+            Triple("Impacto", Icons.Default.Person, 4)
+        )
+        "RECEPTORA" -> listOf(
+            Triple("Inicio", Icons.Default.Home, 0),
+            Triple("Catálogo", Icons.Default.VolunteerActivism, 1),
+            Triple("Solicitudes", Icons.Default.Assignment, 2),
+            Triple("Calidad", Icons.Default.ReportProblem, 3),
+            Triple("Impacto", Icons.Default.Person, 4)
+        )
+        "COORDINADOR" -> listOf(
+            Triple("Inicio", Icons.Default.Home, 0),
+            Triple("Asignaciones", Icons.Default.Assignment, 1),
+            Triple("Apelaciones", Icons.Default.Gavel, 2),
+            Triple("Incidencias", Icons.Default.ReportProblem, 3),
+            Triple("Perfil", Icons.Default.Person, 4)
+        )
+        "ADMINISTRADOR" -> listOf(
+            Triple("Inicio", Icons.Default.Home, 0),
+            Triple("Organizaciones", Icons.Default.Business, 1),
+            Triple("Apelaciones", Icons.Default.Gavel, 2),
+            Triple("Incidencias", Icons.Default.ReportProblem, 3),
+            Triple("Perfil", Icons.Default.Person, 4)
+        )
+        else -> listOf(
+            Triple("Inicio", Icons.Default.Home, 0),
+            Triple("Catálogo", Icons.Default.VolunteerActivism, 1),
+            Triple("Solicitudes", Icons.Default.Assignment, 2),
+            Triple("Calidad", Icons.Default.ReportProblem, 3),
+            Triple("Perfil", Icons.Default.Person, 4)
+        )
     }
 
     Scaffold(
@@ -50,41 +91,20 @@ fun MainAppScreen(
         },
         bottomBar = {
             NavigationBar(containerColor = BlueDark, contentColor = Color.White) {
-                NavigationBarItem(
-                    selected = pestañaActual == 0,
-                    onClick = { pestañaActual = 0 },
-                    icon = { Icon(Icons.Default.Home, contentDescription = "Inicio") },
-                    label = { Text("Inicio", fontSize = 10.sp) },
-                    colors = NavigationBarItemDefaults.colors(selectedIconColor = RedPrimary, selectedTextColor = RedPrimary, unselectedIconColor = Color.Gray, unselectedTextColor = Color.Gray)
-                )
-                NavigationBarItem(
-                    selected = pestañaActual == 1,
-                    onClick = { pestañaActual = 1 },
-                    icon = { Icon(Icons.Default.VolunteerActivism, contentDescription = "Catálogo") },
-                    label = { Text("Catálogo", fontSize = 10.sp) },
-                    colors = NavigationBarItemDefaults.colors(selectedIconColor = RedPrimary, selectedTextColor = RedPrimary, unselectedIconColor = Color.Gray, unselectedTextColor = Color.Gray)
-                )
-                NavigationBarItem(
-                    selected = pestañaActual == 2,
-                    onClick = { pestañaActual = 2 },
-                    icon = { Icon(Icons.Default.Assignment, contentDescription = "Solicitudes") },
-                    label = { Text("Solicitudes", fontSize = 10.sp) },
-                    colors = NavigationBarItemDefaults.colors(selectedIconColor = RedPrimary, selectedTextColor = RedPrimary, unselectedIconColor = Color.Gray, unselectedTextColor = Color.Gray)
-                )
-                NavigationBarItem(
-                    selected = pestañaActual == 3,
-                    onClick = { pestañaActual = 3 },
-                    icon = { Icon(Icons.Default.ReportProblem, contentDescription = "Incidencias") },
-                    label = { Text("Calidad", fontSize = 10.sp) },
-                    colors = NavigationBarItemDefaults.colors(selectedIconColor = RedPrimary, selectedTextColor = RedPrimary, unselectedIconColor = Color.Gray, unselectedTextColor = Color.Gray)
-                )
-                NavigationBarItem(
-                    selected = pestañaActual == 4,
-                    onClick = { pestañaActual = 4 },
-                    icon = { Icon(Icons.Default.Person, contentDescription = "Perfil") },
-                    label = { Text("Impacto", fontSize = 10.sp) },
-                    colors = NavigationBarItemDefaults.colors(selectedIconColor = RedPrimary, selectedTextColor = RedPrimary, unselectedIconColor = Color.Gray, unselectedTextColor = Color.Gray)
-                )
+                tabs.forEach { (title, icon, index) ->
+                    NavigationBarItem(
+                        selected = pestañaActual == index,
+                        onClick = { pestañaActual = index },
+                        icon = { Icon(icon, contentDescription = title) },
+                        label = { Text(title, fontSize = 9.sp, maxLines = 1) },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = RedPrimary,
+                            selectedTextColor = RedPrimary,
+                            unselectedIconColor = Color.Gray,
+                            unselectedTextColor = Color.Gray
+                        )
+                    )
+                }
             }
         }
     ) { padding ->
@@ -92,19 +112,16 @@ fun MainAppScreen(
             when (pestañaActual) {
                 0 -> InicioTabScreen()
                 1 -> DonacionesTabScreen(
-                    rolUsuario = rolUsuario,
+                    rolUsuario = rolNormalized,
                     onLoteClick = onLoteClick,
                     onCrearLoteClick = onCrearLoteClick
                 )
-                2 -> SolicitudesScreen(
-                    onVolver = { pestañaActual = 1 }
-                )
-                3 -> IncidenciasScreen(
-                    onBack = { pestañaActual = 1 }
-                )
-                4 -> PerfilScreen(
-                    onCerrarSesion = onCerrarSesion
-                )
+                2 -> when (rolNormalized) {
+                    "COORDINADOR", "ADMINISTRADOR" -> PanelApelacionesScreen(onBack = { pestañaActual = 0 })
+                    else -> SolicitudesScreen(onVolver = { pestañaActual = 1 })
+                }
+                3 -> IncidenciasScreen(onBack = { pestañaActual = 0 })
+                4 -> PerfilScreen(onCerrarSesion = onCerrarSesion)
             }
         }
     }

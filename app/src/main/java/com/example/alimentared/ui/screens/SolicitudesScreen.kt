@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.alimentared.data.model.AsignacionResponse
 import com.example.alimentared.data.model.SolicitudResponse
+import com.example.alimentared.data.session.SessionManager
 import com.example.alimentared.ui.theme.*
 import com.example.alimentared.ui.viewmodels.SolicitudesViewModel
 
@@ -28,11 +29,18 @@ fun SolicitudesScreen(
     onVolver: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val rol = remember { try { SessionManager.getInstance().getRol().uppercase() } catch (e: Exception) { "RECEPTORA" } }
+    val esSupervisor = rol == "COORDINADOR" || rol == "ADMINISTRADOR"
 
     var tabIndex by remember { mutableStateOf(0) }
     var asignacionAConfirmar by remember { mutableStateOf<AsignacionResponse?>(null) }
     var cantidadConfirmar by remember { mutableStateOf("") }
     var observacionesConfirmar by remember { mutableStateOf("") }
+
+    // Diálogo para aprobar/rechazar solicitud como coordinador
+    var solicitudAResolver by remember { mutableStateOf<SolicitudResponse?>(null) }
+    var motivoResolucion by remember { mutableStateOf("") }
+    var esAprobacion by remember { mutableStateOf(true) }
 
     Scaffold(
         topBar = {
@@ -49,17 +57,22 @@ fun SolicitudesScreen(
                 .padding(padding)
                 .padding(16.dp)
         ) {
-            // Pestañas superiores
+            // Pestañas superiores dinámicas según rol
             TabRow(
                 selectedTabIndex = tabIndex,
                 containerColor = Color.Transparent,
                 contentColor = RedPrimary
             ) {
                 Tab(selected = tabIndex == 0, onClick = { tabIndex = 0 }) {
-                    Text("Asignaciones de Retiro", modifier = Modifier.padding(10.dp), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Text("Asignaciones", modifier = Modifier.padding(10.dp), fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 }
-                Tab(selected = tabIndex == 1, onClick = { tabIndex = 1 }) {
-                    Text("Mis Solicitudes (${uiState.conteoActivas})", modifier = Modifier.padding(10.dp), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                if (esSupervisor) {
+                    Tab(selected = tabIndex == 1, onClick = { tabIndex = 1 }) {
+                        Text("Pendientes de Aprobación", modifier = Modifier.padding(10.dp), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    }
+                }
+                Tab(selected = tabIndex == if (esSupervisor) 2 else 1, onClick = { tabIndex = if (esSupervisor) 2 else 1 }) {
+                    Text("Mis Solicitudes", modifier = Modifier.padding(10.dp), fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 }
             }
 
@@ -82,7 +95,7 @@ fun SolicitudesScreen(
                     CircularProgressIndicator(color = RedPrimary)
                 }
             } else if (tabIndex == 0) {
-                // LISTADO DE ASIGNACIONES ACTIVAS
+                // ASIGNACIONES DE RETIRO
                 if (uiState.asignaciones.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text("No hay asignaciones de retiro pendientes", color = Color.Gray, fontSize = 13.sp)
@@ -101,8 +114,34 @@ fun SolicitudesScreen(
                         }
                     }
                 }
+            } else if (esSupervisor && tabIndex == 1) {
+                // SOLICITUDES PENDIENTES DE APROBACIÓN (COORDINADOR / ADMIN)
+                val pendientes = uiState.solicitudesReceptora.filter { it.estado == "PENDIENTE" }
+                if (pendientes.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("No hay solicitudes pendientes de aprobación", color = Color.Gray, fontSize = 13.sp)
+                    }
+                } else {
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        items(pendientes) { sol ->
+                            SolicitudPendienteCard(
+                                solicitud = sol,
+                                onAprobar = {
+                                    solicitudAResolver = sol
+                                    esAprobacion = true
+                                    motivoResolucion = "Aprobado por coordinación"
+                                },
+                                onRechazar = {
+                                    solicitudAResolver = sol
+                                    esAprobacion = false
+                                    motivoResolucion = "No cumple requisitos de asignación"
+                                }
+                            )
+                        }
+                    }
+                }
             } else {
-                // LISTADO DE MIS SOLICITUDES (RECEPTORA)
+                // MIS SOLICITUDES
                 if (uiState.solicitudesReceptora.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text("No tienes solicitudes registradas", color = Color.Gray, fontSize = 13.sp)
@@ -118,7 +157,7 @@ fun SolicitudesScreen(
         }
     }
 
-    // Modal para Confirmar Entrega Física (RF07)
+    // Modal Confirmar Entrega
     if (asignacionAConfirmar != null) {
         val asig = asignacionAConfirmar!!
         AlertDialog(
@@ -159,6 +198,45 @@ fun SolicitudesScreen(
             },
             dismissButton = {
                 TextButton(onClick = { asignacionAConfirmar = null }) {
+                    Text("Cancelar", color = Color.Gray)
+                }
+            }
+        )
+    }
+
+    // Modal Resolver Solicitud (Aprobar/Rechazar) para Coordinador
+    if (solicitudAResolver != null) {
+        val sol = solicitudAResolver!!
+        AlertDialog(
+            onDismissRequest = { solicitudAResolver = null },
+            title = { Text(if (esAprobacion) "Aprobar Solicitud" else "Rechazar Solicitud", fontWeight = FontWeight.Bold, color = BlueDark) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Lote: ${sol.loteNombre}", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                    Text("Organización: ${sol.organizacionNombre ?: "Fundación"}", fontSize = 12.sp, color = Color.Gray)
+                    Text("Cantidad: ${sol.cantidadSolicitada} Kg", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+
+                    OutlinedTextField(
+                        value = motivoResolucion,
+                        onValueChange = { motivoResolucion = it },
+                        label = { Text("Motivo / Observación") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.resolverSolicitud(sol.id, esAprobacion, motivoResolucion)
+                        solicitudAResolver = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = if (esAprobacion) RedPrimary else RedDark)
+                ) {
+                    Text(if (esAprobacion) "Aprobar" else "Rechazar", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { solicitudAResolver = null }) {
                     Text("Cancelar", color = Color.Gray)
                 }
             }
@@ -225,6 +303,51 @@ fun AsignacionCard(
                     ) {
                         Text("No Recogido", fontSize = 11.sp, color = RedDark)
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SolicitudPendienteCard(
+    solicitud: SolicitudResponse,
+    onAprobar: () -> Unit,
+    onRechazar: () -> Unit
+) {
+    Card(
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("SOLICITUD #${solicitud.id}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = RedPrimary)
+                Surface(color = Color(0xFFFEF3C7), shape = RoundedCornerShape(6.dp)) {
+                    Text("PENDIENTE", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF92400E), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                }
+            }
+
+            Text(solicitud.loteNombre ?: "Lote de Alimentos", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = BlueDark)
+            Text("Organización: ${solicitud.organizacionNombre ?: "Fundación Receptora"}", fontSize = 12.sp, color = Color.Gray)
+            Text("Cantidad Solicitada: ${solicitud.cantidadSolicitada} Kg", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = BlueDark)
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = onAprobar,
+                    colors = ButtonDefaults.buttonColors(containerColor = RedPrimary),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Aprobar", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                }
+                OutlinedButton(
+                    onClick = onRechazar,
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Rechazar", fontSize = 11.sp, color = RedDark)
                 }
             }
         }

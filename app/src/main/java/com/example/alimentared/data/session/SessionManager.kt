@@ -2,6 +2,8 @@ package com.example.alimentared.data.session
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 import com.example.alimentared.data.model.UsuarioResponse
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -10,9 +12,22 @@ import kotlinx.coroutines.flow.asStateFlow
 
 class SessionManager private constructor(context: Context) {
 
-    private val prefs: SharedPreferences = context.applicationContext.getSharedPreferences(
-        PREFS_NAME, Context.MODE_PRIVATE
-    )
+    private val prefs: SharedPreferences = try {
+        val masterKey = MasterKey.Builder(context)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
+        EncryptedSharedPreferences.create(
+            context,
+            PREFS_NAME,
+            masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
+    } catch (e: Exception) {
+        // Fallback to standard SharedPreferences if encryption fails on some devices/emulators
+        context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    }
+
     private val gson = Gson()
 
     private val _isLoggedInFlow = MutableStateFlow(!getToken().isNullOrBlank())
@@ -51,7 +66,6 @@ class SessionManager private constructor(context: Context) {
 
     fun getServerUrl(): String {
         val saved = prefs.getString(KEY_SERVER_URL, null)
-        // Migrar automáticamente a Render Cloud si no hay guardada o si tenía una IP local antigua
         if (saved == null || saved.contains("192.168.1.18") || saved.contains("10.0.2.2") || saved.contains("127.0.0.1")) {
             setServerUrl(DEFAULT_SERVER_URL)
             return DEFAULT_SERVER_URL
@@ -87,7 +101,7 @@ class SessionManager private constructor(context: Context) {
     }
 
     companion object {
-        private const val PREFS_NAME = "alimentared_session_prefs"
+        private const val PREFS_NAME = "alimentared_secure_session_prefs"
         private const val KEY_TOKEN = "jwt_token"
         private const val KEY_USER_JSON = "user_json"
         private const val KEY_ROLE = "user_role"
