@@ -85,9 +85,17 @@ fun ConfigurarServidorDialog(
                     label = { Text("URL Base del API") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    textStyle = androidx.compose.ui.text.TextStyle(color = Color.Black, fontSize = 13.sp),
                     colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
                         focusedBorderColor = RedPrimary,
-                        focusedLabelColor = RedPrimary
+                        unfocusedBorderColor = Color(0xFFCBD5E1),
+                        focusedLabelColor = RedPrimary,
+                        unfocusedLabelColor = Color(0xFF475569),
+                        cursorColor = RedPrimary
                     )
                 )
 

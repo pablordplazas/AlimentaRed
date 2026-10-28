@@ -165,6 +165,30 @@ fun LoginScreen(
         }
     }
 
+    val standardTextFieldColors = OutlinedTextFieldDefaults.colors(
+        focusedTextColor = Color.Black,
+        unfocusedTextColor = Color.Black,
+        errorTextColor = Color.Black,
+        focusedContainerColor = Color.White,
+        unfocusedContainerColor = Color.White,
+        errorContainerColor = Color.White,
+        focusedBorderColor = RedPrimary,
+        unfocusedBorderColor = Color(0xFFCBD5E1),
+        errorBorderColor = RedPrimary,
+        focusedLabelColor = RedPrimary,
+        unfocusedLabelColor = Color(0xFF475569),
+        errorLabelColor = RedPrimary,
+        focusedPlaceholderColor = Color(0xFF94A3B8),
+        unfocusedPlaceholderColor = Color(0xFF94A3B8),
+        cursorColor = RedPrimary,
+        errorCursorColor = RedPrimary
+    )
+    val standardTextStyle = androidx.compose.ui.text.TextStyle(
+        color = Color.Black,
+        fontSize = 14.sp,
+        fontWeight = FontWeight.Normal
+    )
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -299,11 +323,9 @@ fun LoginScreen(
                     label = { Text("Correo Electrónico") },
                     placeholder = { Text("ejemplo@organizacion.com") },
                     singleLine = true,
+                    textStyle = standardTextStyle,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = RedPrimary,
-                        focusedLabelColor = RedPrimary
-                    )
+                    colors = standardTextFieldColors
                 )
 
                 OutlinedTextField(
@@ -311,6 +333,7 @@ fun LoginScreen(
                     onValueChange = { password = it; authViewModel.limpiarError() },
                     label = { Text("Contraseña") },
                     singleLine = true,
+                    textStyle = standardTextStyle,
                     visualTransformation = if (showLoginPassword) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
                         IconButton(onClick = { showLoginPassword = !showLoginPassword }) {
@@ -322,10 +345,7 @@ fun LoginScreen(
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = RedPrimary,
-                        focusedLabelColor = RedPrimary
-                    )
+                    colors = standardTextFieldColors
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -380,17 +400,13 @@ fun LoginScreen(
                     label = { Text("NIT / Identificación Fiscal") },
                     placeholder = { Text("Ej: 900123456-7") },
                     singleLine = true,
+                    textStyle = standardTextStyle,
                     isError = errorNit != null,
                     supportingText = if (errorNit != null) {
                         { Text(errorNit!!, color = RedPrimary, fontSize = 11.sp) }
                     } else null,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = RedPrimary,
-                        focusedLabelColor = RedPrimary,
-                        errorBorderColor = RedPrimary,
-                        errorLabelColor = RedPrimary
-                    )
+                    colors = standardTextFieldColors
                 )
 
                 // 2. Nombre de la Organización
@@ -404,17 +420,13 @@ fun LoginScreen(
                     label = { Text("Nombre de la Organización") },
                     placeholder = { Text("Ej: Nikopolleria") },
                     singleLine = true,
+                    textStyle = standardTextStyle,
                     isError = errorNombreOrg != null,
                     supportingText = if (errorNombreOrg != null) {
                         { Text(errorNombreOrg!!, color = RedPrimary, fontSize = 11.sp) }
                     } else null,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = RedPrimary,
-                        focusedLabelColor = RedPrimary,
-                        errorBorderColor = RedPrimary,
-                        errorLabelColor = RedPrimary
-                    )
+                    colors = standardTextFieldColors
                 )
 
                 // 3. Correo Electrónico
@@ -428,17 +440,13 @@ fun LoginScreen(
                     label = { Text("Correo Electrónico") },
                     placeholder = { Text("ejemplo@organizacion.com") },
                     singleLine = true,
+                    textStyle = standardTextStyle,
                     isError = errorCorreoOrg != null,
                     supportingText = if (errorCorreoOrg != null) {
                         { Text(errorCorreoOrg!!, color = RedPrimary, fontSize = 11.sp) }
                     } else null,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = RedPrimary,
-                        focusedLabelColor = RedPrimary,
-                        errorBorderColor = RedPrimary,
-                        errorLabelColor = RedPrimary
-                    )
+                    colors = standardTextFieldColors
                 )
 
                 // 4. Nombre del Representante
@@ -452,17 +460,13 @@ fun LoginScreen(
                     label = { Text("Nombre del Representante") },
                     placeholder = { Text("Ej: Nicolas Rodriguez") },
                     singleLine = true,
+                    textStyle = standardTextStyle,
                     isError = errorContacto != null,
                     supportingText = if (errorContacto != null) {
                         { Text(errorContacto!!, color = RedPrimary, fontSize = 11.sp) }
                     } else null,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = RedPrimary,
-                        focusedLabelColor = RedPrimary,
-                        errorBorderColor = RedPrimary,
-                        errorLabelColor = RedPrimary
-                    )
+                    colors = standardTextFieldColors
                 )
 
                 // 5. Contraseña
@@ -476,6 +480,7 @@ fun LoginScreen(
                     label = { Text("Contraseña (mínimo 8 caracteres)") },
                     placeholder = { Text("Mínimo 8 letras y números") },
                     singleLine = true,
+                    textStyle = standardTextStyle,
                     visualTransformation = if (showRegisterPassword) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
                         IconButton(onClick = { showRegisterPassword = !showRegisterPassword }) {
@@ -493,12 +498,7 @@ fun LoginScreen(
                         { Text("Debe tener al menos 8 caracteres, combinando letras y números.", color = Color.Gray, fontSize = 10.sp) }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = RedPrimary,
-                        focusedLabelColor = RedPrimary,
-                        errorBorderColor = RedPrimary,
-                        errorLabelColor = RedPrimary
-                    )
+                    colors = standardTextFieldColors
                 )
 
                 Button(

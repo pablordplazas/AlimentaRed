@@ -62,6 +62,19 @@ fun PublishLoteScreen(
         }
     }
 
+    val fieldColors = OutlinedTextFieldDefaults.colors(
+        focusedTextColor = Color.Black,
+        unfocusedTextColor = Color.Black,
+        focusedContainerColor = Color.White,
+        unfocusedContainerColor = Color.White,
+        focusedBorderColor = RedPrimary,
+        unfocusedBorderColor = Color(0xFFCBD5E1),
+        focusedLabelColor = RedPrimary,
+        unfocusedLabelColor = Color(0xFF475569),
+        cursorColor = RedPrimary
+    )
+    val fieldTextStyle = androidx.compose.ui.text.TextStyle(color = Color.Black, fontSize = 14.sp)
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -119,8 +132,9 @@ fun PublishLoteScreen(
                     onValueChange = { nombre = it },
                     label = { Text("Título del lote (ej. Pan Campesino, Sopa)") },
                     singleLine = true,
+                    textStyle = fieldTextStyle,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RedPrimary, focusedLabelColor = RedPrimary)
+                    colors = fieldColors
                 )
 
                 OutlinedTextField(
@@ -128,8 +142,9 @@ fun PublishLoteScreen(
                     onValueChange = { descripcion = it },
                     label = { Text("Descripción (estado, empacado, refrigeración)") },
                     minLines = 2,
+                    textStyle = fieldTextStyle,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RedPrimary, focusedLabelColor = RedPrimary)
+                    colors = fieldColors
                 )
 
                 Text("Categoría del Alimento:", fontSize = 12.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
@@ -153,24 +168,27 @@ fun PublishLoteScreen(
                         onValueChange = { cantidad = it },
                         label = { Text("Cantidad (Kg/L)") },
                         singleLine = true,
+                        textStyle = fieldTextStyle,
                         modifier = Modifier.weight(1f),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RedPrimary, focusedLabelColor = RedPrimary)
+                        colors = fieldColors
                     )
                     OutlinedTextField(
                         value = unidadMinima,
                         onValueChange = { unidadMinima = it },
                         label = { Text("Mínimo") },
                         singleLine = true,
+                        textStyle = fieldTextStyle,
                         modifier = Modifier.weight(1f),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RedPrimary, focusedLabelColor = RedPrimary)
+                        colors = fieldColors
                     )
                     OutlinedTextField(
                         value = multiplo,
                         onValueChange = { multiplo = it },
                         label = { Text("Múltiplo") },
                         singleLine = true,
+                        textStyle = fieldTextStyle,
                         modifier = Modifier.weight(1f),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RedPrimary, focusedLabelColor = RedPrimary)
+                        colors = fieldColors
                     )
                 }
 
@@ -196,8 +214,9 @@ fun PublishLoteScreen(
                     onValueChange = { ubicacion = it },
                     label = { Text("Dirección / Punto de Retiro (Confidencial)") },
                     singleLine = true,
+                    textStyle = fieldTextStyle,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RedPrimary, focusedLabelColor = RedPrimary)
+                    colors = fieldColors
                 )
 
                 OutlinedTextField(
@@ -205,8 +224,9 @@ fun PublishLoteScreen(
                     onValueChange = { instrucciones = it },
                     label = { Text("Instrucciones de Retiro (Muelle, timbre, recipientes)") },
                     minLines = 2,
+                    textStyle = fieldTextStyle,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RedPrimary, focusedLabelColor = RedPrimary)
+                    colors = fieldColors
                 )
 
                 OutlinedTextField(
@@ -214,8 +234,9 @@ fun PublishLoteScreen(
                     onValueChange = { contacto = it },
                     label = { Text("Teléfono de Contacto Operativo") },
                     singleLine = true,
+                    textStyle = fieldTextStyle,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RedPrimary, focusedLabelColor = RedPrimary)
+                    colors = fieldColors
                 )
 
                 Button(
