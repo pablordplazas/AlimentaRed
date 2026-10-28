@@ -155,7 +155,7 @@ fun PerfilScreen(
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Icon(Icons.Default.Gavel, contentDescription = null, tint = RedPrimary)
                                         Spacer(modifier = Modifier.width(6.dp))
-                                        Text("Strikes Acumulados (RN08)", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = BlueDark)
+                                        Text("Strikes Acumulados", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = BlueDark)
                                     }
                                     Text(
                                         "$strikesVigentes / 3",
@@ -174,7 +174,7 @@ fun PerfilScreen(
 
                                 if (strikesVigentes >= 3) {
                                     Text(
-                                        "⛔ CUENTA SUSPENDIDA: Al acumular 3 strikes vigentes, tu organización no puede solicitar ni publicar alimentos. Envía un correo a coordinador@alimentared.com para solicitar la revisión y apelación de tu caso (RN08 / RN12).",
+                                        "⛔ CUENTA SUSPENDIDA: Al acumular 3 strikes vigentes, tu organización no puede solicitar ni publicar alimentos. Envía un correo a coordinador@alimentared.com para solicitar la revisión y apelación de tu caso.",
                                         color = RedDark,
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
@@ -227,7 +227,7 @@ fun PerfilScreen(
                                     Text("Panel de Control Operativo ($rol)", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = BlueDark)
                                 }
                                 Text(
-                                    "Tu perfil cuenta con privilegios administrativos y de auditoría. Los strikes y sanciones (RN08 / RN12) aplican exclusivamente a organizaciones Donantes y Receptoras por cumplimiento de franjas horarias e inocuidad.",
+                                    "Tu perfil cuenta con privilegios administrativos y de auditoría. Los strikes y sanciones aplican exclusivamente a organizaciones Donantes y Receptoras por cumplimiento de franjas horarias e inocuidad.",
                                     fontSize = 12.sp,
                                     color = Color.DarkGray,
                                     lineHeight = 17.sp
@@ -243,15 +243,15 @@ fun PerfilScreen(
                                 ) {
                                     Icon(Icons.Default.Gavel, contentDescription = null, modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Text("⚖️ Abrir Panel de Gestión de Apelaciones (RN12)", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text("⚖️ Abrir Panel de Gestión de Apelaciones", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
                     }
 
-                    // 3. KPIS DE IMPACTO SOCIAL Y AMBIENTAL (RF09)
+                    // 3. KPIS DE IMPACTO SOCIAL Y AMBIENTAL
                     val imp = uiState.impacto
-                    Text("Impacto Global de AlimentaRed (RF09)", fontWeight = FontWeight.Black, fontSize = 16.sp, color = BlueDark)
+                    Text("Impacto Global de AlimentaRed", fontWeight = FontWeight.Black, fontSize = 16.sp, color = BlueDark)
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         MetricCard(

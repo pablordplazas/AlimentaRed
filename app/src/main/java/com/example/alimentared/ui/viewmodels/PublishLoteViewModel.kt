@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.alimentared.data.model.LoteRequest
 import com.example.alimentared.data.model.TipoAlimentoResponse
 import com.example.alimentared.data.remote.RetrofitClient
+import com.example.alimentared.util.removerCodigosRegla
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -117,7 +118,7 @@ class PublishLoteViewModel : ViewModel() {
             try {
                 val json = Gson().fromJson(body, JsonObject::class.java)
                 if (json.has("mensaje")) {
-                    return json.get("mensaje").asString
+                    return json.get("mensaje").asString.removerCodigosRegla()
                 }
             } catch (ignored: Exception) {}
         }

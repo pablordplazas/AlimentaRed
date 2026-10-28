@@ -26,6 +26,7 @@ import com.example.alimentared.ui.theme.BackgroundLight
 import com.example.alimentared.ui.theme.BlueDark
 import com.example.alimentared.ui.theme.RedDark
 import com.example.alimentared.ui.theme.RedPrimary
+import com.example.alimentared.util.removerCodigosRegla
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,7 +43,7 @@ fun DetalleStrikesScreen(
             TopAppBar(
                 title = {
                     Text(
-                        "Detalle de Sanciones (RN08)",
+                        "Detalle de Sanciones",
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp
@@ -166,7 +167,7 @@ fun DetalleStrikesScreen(
                             Icon(Icons.Default.Block, contentDescription = null, tint = RedPrimary)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                "⛔ CUENTA SUSPENDIDA (RN08)",
+                                "⛔ CUENTA SUSPENDIDA",
                                 fontWeight = FontWeight.Black,
                                 fontSize = 14.sp,
                                 color = RedDark
@@ -285,7 +286,7 @@ fun DetalleStrikesScreen(
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
-                                        strike.nombreStrike,
+                                        strike.nombreStrike.removerCodigosRegla(),
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 13.sp,
                                         color = BlueDark
@@ -314,7 +315,7 @@ fun DetalleStrikesScreen(
                             }
 
                             Text(
-                                strike.detalles ?: "Infracción logística o incumplimiento de horario.",
+                                strike.detalles?.removerCodigosRegla() ?: "Infracción logística o incumplimiento de horario.",
                                 fontSize = 12.sp,
                                 color = Color.DarkGray
                             )
@@ -337,7 +338,7 @@ fun DetalleStrikesScreen(
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
-                                        "Para solicitar apelación (RN12), envía un correo a coordinador@alimentared.com indicando el ID de strike (#${strike.id}).",
+                                        "Para solicitar apelación, envía un correo a coordinador@alimentared.com indicando el ID de strike (#${strike.id}).",
                                         fontSize = 10.sp,
                                         color = Color(0xFF92400E),
                                         lineHeight = 14.sp
@@ -345,7 +346,7 @@ fun DetalleStrikesScreen(
                                 }
                             } else {
                                 Text(
-                                    "✓ Apelación evaluada: ${strike.justificacionApelacion ?: "Sanción anulada por la coordinación"}",
+                                    "✓ Apelación evaluada: ${strike.justificacionApelacion?.removerCodigosRegla() ?: "Sanción anulada por la coordinación"}",
                                     fontSize = 11.sp,
                                     color = Color(0xFF16A34A),
                                     fontWeight = FontWeight.SemiBold

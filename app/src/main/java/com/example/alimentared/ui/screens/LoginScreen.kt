@@ -67,7 +67,7 @@ fun LoginScreen(
         Triple("Coordinador", "coordinador@alimentared.com", "Coord12345"),
         Triple("Admin", "admin@alimentared.com", "Admin12345"),
         Triple("Panadería Sol (3 Strikes)", "suspendido@panaderiasol.com", "Pass12345"),
-        Triple("Suspendida (RN08)", "suspendido@abuelitospaz.org", "Pass12345")
+        Triple("Abuelitos Paz (Suspendida)", "suspendido@abuelitospaz.org", "Pass12345")
     )
 
     LaunchedEffect(uiState.isSuccess, uiState.user) {

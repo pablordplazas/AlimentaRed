@@ -98,7 +98,7 @@ fun LoteDetailScreen(
                         Icon(Icons.Default.Timer, contentDescription = null, tint = RedPrimary)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            "¡Alerta de Rescate Urgente! Caduca en menos de 4 horas. Prioridad máxima de retiro (RF04).",
+                            "¡Alerta de Rescate Urgente! Caduca en menos de 4 horas. Prioridad máxima de retiro.",
                             color = RedDark,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
@@ -132,7 +132,7 @@ fun LoteDetailScreen(
                             Text("${lote.cantidadDisponible} ${lote.unidadMedida}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = BlueDark)
                         }
                         Column {
-                            Text("Unidad Mínima (RN05)", fontSize = 11.sp, color = Color.Gray)
+                            Text("Unidad Mínima", fontSize = 11.sp, color = Color.Gray)
                             Text("${lote.unidadMinima} ${lote.unidadMedida}", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = BlueDark)
                         }
                         Column {
@@ -184,7 +184,7 @@ fun LoteDetailScreen(
                         Text("📞 Contacto: ${lote.contacto ?: "No especificado"}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = BlueDark)
                     } else {
                         Text(
-                            "Por protocolo de seguridad y equidad (RF04), la dirección exacta, horario de muelle y contacto solo se revelan a la fundación una vez que la solicitud sea formalmente asignada.",
+                            "Por protocolo de seguridad y equidad, la dirección exacta, horario de muelle y contacto solo se revelan a la fundación una vez que la solicitud sea formalmente asignada.",
                             fontSize = 11.sp,
                             color = Color.Gray
                         )
@@ -202,7 +202,7 @@ fun LoteDetailScreen(
                 ) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Text("Calculadora de Reserva de Donación", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = BlueDark)
-                        Text("Calcula las raciones garantizando la regla de no dejar remanentes inútiles.", fontSize = 12.sp, color = Color.Gray)
+                        Text("Calcula las raciones garantizando no dejar remanentes inútiles.", fontSize = 12.sp, color = Color.Gray)
 
                         OutlinedTextField(
                             value = uiState.cantidadInput,
@@ -232,7 +232,7 @@ fun LoteDetailScreen(
                             )
                         } else if (uiState.esValido) {
                             Text(
-                                "✅ Cumple con la unidad mínima (${lote.unidadMinima}), múltiplos (${lote.multiplo}) y remanente útil (RN05/RN10).",
+                                "✅ Cumple con la unidad mínima (${lote.unidadMinima}), múltiplos (${lote.multiplo}) y remanente útil.",
                                 color = Color(0xFF16A34A),
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold

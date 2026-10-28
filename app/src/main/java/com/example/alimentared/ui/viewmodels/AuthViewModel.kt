@@ -7,6 +7,7 @@ import com.example.alimentared.data.model.RegisterRequest
 import com.example.alimentared.data.model.UsuarioResponse
 import com.example.alimentared.data.remote.RetrofitClient
 import com.example.alimentared.data.session.SessionManager
+import com.example.alimentared.util.removerCodigosRegla
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -122,7 +123,7 @@ class AuthViewModel : ViewModel() {
 
     private fun parseErrorMessage(code: Int, body: String?): String {
         if (code == 403) {
-            return "⛔ CUENTA SUSPENDIDA: Tu organización acumula 3 strikes vigentes (RN08). Envía un correo a coordinador@alimentared.com para solicitar la revisión y apelación de tu caso."
+            return "⛔ CUENTA SUSPENDIDA: Tu organización acumula 3 strikes vigentes. Envía un correo a coordinador@alimentared.com para solicitar la revisión y apelación de tu caso."
         }
         if (code == 401) {
             return "Credenciales inválidas. Verifica tu correo y contraseña."
@@ -131,7 +132,7 @@ class AuthViewModel : ViewModel() {
             try {
                 val json = Gson().fromJson(body, JsonObject::class.java)
                 if (json.has("mensaje")) {
-                    return json.get("mensaje").asString
+                    return json.get("mensaje").asString.removerCodigosRegla()
                 }
             } catch (ignored: Exception) {}
         }

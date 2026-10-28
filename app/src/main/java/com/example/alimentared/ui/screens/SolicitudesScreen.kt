@@ -223,7 +223,7 @@ fun AsignacionCard(
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("No Recogido (RN08)", fontSize = 11.sp, color = RedDark)
+                        Text("No Recogido", fontSize = 11.sp, color = RedDark)
                     }
                 }
             }
@@ -272,7 +272,7 @@ fun SolicitudCard(solicitud: SolicitudResponse) {
                     Row(modifier = Modifier.padding(6.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.HourglassEmpty, contentDescription = null, tint = Color(0xFFD97706), modifier = Modifier.size(14.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Ventana de Empate (RN09): en espera de decisión del donante", fontSize = 10.sp, color = Color(0xFF92400E), fontWeight = FontWeight.Bold)
+                        Text("Ventana de Empate: en espera de decisión del donante", fontSize = 10.sp, color = Color(0xFF92400E), fontWeight = FontWeight.Bold)
                     }
                 }
             }

@@ -8,6 +8,7 @@ import com.example.alimentared.data.model.StrikeResponse
 import com.example.alimentared.data.model.UsuarioResponse
 import com.example.alimentared.data.remote.RetrofitClient
 import com.example.alimentared.data.session.SessionManager
+import com.example.alimentared.util.removerCodigosRegla
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -113,7 +114,7 @@ class PerfilImpactoViewModel : ViewModel() {
                 if (res.isSuccessful) {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        mensajeExito = "¡Apelación radicada exitosamente! Será evaluada por la coordinación (RN12)."
+                        mensajeExito = "¡Apelación radicada exitosamente! Será evaluada por la coordinación."
                     )
                     cargarDatos()
                 } else {
@@ -131,7 +132,7 @@ class PerfilImpactoViewModel : ViewModel() {
             try {
                 val json = Gson().fromJson(body, JsonObject::class.java)
                 if (json.has("mensaje")) {
-                    return json.get("mensaje").asString
+                    return json.get("mensaje").asString.removerCodigosRegla()
                 }
             } catch (ignored: Exception) {}
         }

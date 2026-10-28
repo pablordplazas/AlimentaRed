@@ -26,6 +26,7 @@ import com.example.alimentared.ui.theme.BackgroundLight
 import com.example.alimentared.ui.theme.BlueDark
 import com.example.alimentared.ui.theme.RedDark
 import com.example.alimentared.ui.theme.RedPrimary
+import com.example.alimentared.util.removerCodigosRegla
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -79,7 +80,7 @@ fun PanelApelacionesScreen(
             TopAppBar(
                 title = {
                     Text(
-                        "Panel de Apelaciones (RN12)",
+                        "Panel de Apelaciones",
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp
@@ -267,14 +268,14 @@ fun PanelApelacionesScreen(
                             }
 
                             Text(
-                                "Motivo: ${strike.nombreStrike}",
+                                "Motivo: ${strike.nombreStrike.removerCodigosRegla()}",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 12.sp,
                                 color = RedDark
                             )
 
                             Text(
-                                strike.detalles ?: "Infracción logística registrada.",
+                                strike.detalles?.removerCodigosRegla() ?: "Infracción logística registrada.",
                                 fontSize = 12.sp,
                                 color = Color.DarkGray
                             )
@@ -287,7 +288,7 @@ fun PanelApelacionesScreen(
                                 ) {
                                     Column(modifier = Modifier.padding(8.dp)) {
                                         Text("Resolución previa:", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
-                                        Text(strike.justificacionApelacion, fontSize = 11.sp, color = BlueDark)
+                                        Text(strike.justificacionApelacion.removerCodigosRegla(), fontSize = 11.sp, color = BlueDark)
                                     }
                                 }
                             }
@@ -306,7 +307,7 @@ fun PanelApelacionesScreen(
                                 ) {
                                     Icon(Icons.Default.Gavel, contentDescription = null, modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Evaluar Apelación (RN12)", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text("Evaluar Apelación", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
