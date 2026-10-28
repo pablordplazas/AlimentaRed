@@ -19,6 +19,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.alimentared.data.model.IncidenciaResponse
+import com.example.alimentared.ui.components.AlimentaRedBackground
+import com.example.alimentared.ui.components.BackgroundPatternType
 import com.example.alimentared.ui.theme.*
 import com.example.alimentared.ui.viewmodels.IncidenciasViewModel
 
@@ -47,13 +49,16 @@ fun IncidenciasScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = BlueDark)
             )
         },
-        containerColor = BackgroundLight
+        containerColor = Color.Transparent
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp),
+        AlimentaRedBackground(
+            modifier = Modifier.padding(padding),
+            patternType = BackgroundPatternType.GENERAL
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(
@@ -144,6 +149,7 @@ fun IncidenciasScreen(
                 }
             }
         }
+    }
     }
 }
 

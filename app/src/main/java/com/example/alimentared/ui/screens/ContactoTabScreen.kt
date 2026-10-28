@@ -24,7 +24,7 @@ fun ContactoTabScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundLight)
+
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {

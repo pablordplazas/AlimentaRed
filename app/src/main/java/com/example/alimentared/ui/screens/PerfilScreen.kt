@@ -59,7 +59,7 @@ fun PerfilScreen(
         PerfilSubVista.PERFIL -> {
             // Contenedor principal sin barra de navegación duplicada
             Surface(
-                color = BackgroundLight,
+                color = Color.Transparent,
                 modifier = Modifier.fillMaxSize()
             ) {
                 Column(
@@ -308,3 +308,4 @@ fun MetricCard(
         }
     }
 }
+

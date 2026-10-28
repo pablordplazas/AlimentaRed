@@ -1,6 +1,5 @@
 package com.example.alimentared.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -20,6 +19,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.alimentared.ui.components.AlimentaRedBackground
+import com.example.alimentared.ui.components.BackgroundPatternType
 import com.example.alimentared.ui.theme.*
 import com.example.alimentared.ui.viewmodels.PublishLoteViewModel
 
@@ -68,161 +69,165 @@ fun PublishLoteScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = BlueDark)
             )
         },
-        containerColor = BackgroundLight
+        containerColor = Color.Transparent
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+        AlimentaRedBackground(
+            modifier = Modifier.padding(padding),
+            patternType = BackgroundPatternType.CATALOGO
         ) {
-            Text("Detalles de la Oferta", fontWeight = FontWeight.Black, fontSize = 16.sp, color = BlueDark)
-
-            if (uiState.error != null) {
-                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFEE2E2)), modifier = Modifier.fillMaxWidth()) {
-                    Text(uiState.error!!, color = RedDark, fontSize = 12.sp, modifier = Modifier.padding(10.dp))
-                }
-            }
-
-            OutlinedTextField(
-                value = nombre,
-                onValueChange = { nombre = it },
-                label = { Text("Título del lote (ej. Pan Campesino, Sopa)") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RedPrimary, focusedLabelColor = RedPrimary)
-            )
-
-            OutlinedTextField(
-                value = descripcion,
-                onValueChange = { descripcion = it },
-                label = { Text("Descripción (estado, empacado, refrigeración)") },
-                minLines = 2,
-                modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RedPrimary, focusedLabelColor = RedPrimary)
-            )
-
-            Text("Categoría del Alimento:", fontSize = 12.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(uiState.categorias) { cat ->
-                    FilterChip(
-                        selected = (categoriaId == cat.id),
-                        onClick = { categoriaId = cat.id },
-                        label = { Text(cat.nombre, fontSize = 11.sp) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = RedPrimary.copy(alpha = 0.15f),
-                            selectedLabelColor = RedPrimary
-                        )
-                    )
-                }
-            }
-
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = cantidad,
-                    onValueChange = { cantidad = it },
-                    label = { Text("Cantidad Total") },
-                    singleLine = true,
-                    modifier = Modifier.weight(1f),
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RedPrimary)
-                )
-                OutlinedTextField(
-                    value = unidadMinima,
-                    onValueChange = { unidadMinima = it },
-                    label = { Text("Unidad Mínima") },
-                    singleLine = true,
-                    modifier = Modifier.weight(1f),
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RedPrimary)
-                )
-                OutlinedTextField(
-                    value = multiplo,
-                    onValueChange = { multiplo = it },
-                    label = { Text("Múltiplo") },
-                    singleLine = true,
-                    modifier = Modifier.weight(1f),
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RedPrimary)
-                )
-            }
-
-            Text("Vigencia / Horas para Caducar:", fontSize = 12.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf(4 to "4h (Rescate Urgente)", 8 to "8h", 12 to "12h", 24 to "24h").forEach { (h, lbl) ->
-                    FilterChip(
-                        selected = (horasVigencia == h),
-                        onClick = { horasVigencia = h },
-                        label = { Text(lbl, fontSize = 10.sp) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = if (h == 4) RedPrimary else BlueDark,
-                            selectedLabelColor = Color.White
-                        )
-                    )
-                }
-            }
-
-            OutlinedTextField(
-                value = ubicacion,
-                onValueChange = { ubicacion = it },
-                label = { Text("Dirección / Ubicación del punto de retiro") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RedPrimary)
-            )
-
-            OutlinedTextField(
-                value = instrucciones,
-                onValueChange = { instrucciones = it },
-                label = { Text("Instrucciones de Recogida (Enmascaradas hasta asignación)") },
-                minLines = 2,
-                modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RedPrimary)
-            )
-
-            OutlinedTextField(
-                value = contacto,
-                onValueChange = { contacto = it },
-                label = { Text("Persona o Teléfono de Contacto") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RedPrimary)
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Button(
-                onClick = {
-                    val cid = categoriaId ?: 1L
-                    val cant = cantidad.toDoubleOrNull() ?: 0.0
-                    val umin = unidadMinima.toDoubleOrNull() ?: 0.0
-                    val mult = multiplo.toDoubleOrNull() ?: 0.0
-                    viewModel.publicarLote(
-                        nombre = nombre,
-                        descripcion = descripcion,
-                        categoriaId = cid,
-                        cantidad = cant,
-                        unidadMinima = umin,
-                        multiplo = mult,
-                        estadoAlimento = estadoAlimento,
-                        horasVigencia = horasVigencia,
-                        ubicacion = ubicacion,
-                        instrucciones = instrucciones,
-                        contacto = contacto
-                    )
-                },
-                enabled = !uiState.isLoading,
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = RedPrimary)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                if (uiState.isLoading) {
-                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(22.dp))
-                } else {
-                    Icon(Icons.Default.Publish, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Publicar Donación en Catálogo", fontWeight = FontWeight.Bold, color = Color.White)
+                Text("Detalles de la Oferta", fontWeight = FontWeight.Black, fontSize = 16.sp, color = BlueDark)
+
+                if (uiState.error != null) {
+                    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFEE2E2)), modifier = Modifier.fillMaxWidth()) {
+                        Text(uiState.error!!, color = RedDark, fontSize = 12.sp, modifier = Modifier.padding(10.dp))
+                    }
+                }
+
+                OutlinedTextField(
+                    value = nombre,
+                    onValueChange = { nombre = it },
+                    label = { Text("Título del lote (ej. Pan Campesino, Sopa)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RedPrimary, focusedLabelColor = RedPrimary)
+                )
+
+                OutlinedTextField(
+                    value = descripcion,
+                    onValueChange = { descripcion = it },
+                    label = { Text("Descripción (estado, empacado, refrigeración)") },
+                    minLines = 2,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RedPrimary, focusedLabelColor = RedPrimary)
+                )
+
+                Text("Categoría del Alimento:", fontSize = 12.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(uiState.categorias) { cat ->
+                        FilterChip(
+                            selected = (categoriaId == cat.id),
+                            onClick = { categoriaId = cat.id },
+                            label = { Text(cat.nombre, fontSize = 11.sp) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = RedPrimary.copy(alpha = 0.15f),
+                                selectedLabelColor = RedPrimary
+                            )
+                        )
+                    }
+                }
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedTextField(
+                        value = cantidad,
+                        onValueChange = { cantidad = it },
+                        label = { Text("Cantidad (Kg/L)") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RedPrimary, focusedLabelColor = RedPrimary)
+                    )
+                    OutlinedTextField(
+                        value = unidadMinima,
+                        onValueChange = { unidadMinima = it },
+                        label = { Text("Mínimo") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RedPrimary, focusedLabelColor = RedPrimary)
+                    )
+                    OutlinedTextField(
+                        value = multiplo,
+                        onValueChange = { multiplo = it },
+                        label = { Text("Múltiplo") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RedPrimary, focusedLabelColor = RedPrimary)
+                    )
+                }
+
+                Text("Vigencia de Rescate Urgente (RN03):", fontSize = 12.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(2, 4, 8, 12, 24).forEach { h ->
+                        FilterChip(
+                            selected = (horasVigencia == h),
+                            onClick = { horasVigencia = h },
+                            label = { Text("$h horas", fontSize = 11.sp) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = if (h == 4) RedPrimary else BlueDark,
+                                selectedLabelColor = Color.White
+                            )
+                        )
+                    }
+                }
+
+                Text("Logística Segura (Enmascarada hasta asignación RF04):", fontSize = 12.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
+
+                OutlinedTextField(
+                    value = ubicacion,
+                    onValueChange = { ubicacion = it },
+                    label = { Text("Dirección / Punto de Retiro (Confidencial)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RedPrimary, focusedLabelColor = RedPrimary)
+                )
+
+                OutlinedTextField(
+                    value = instrucciones,
+                    onValueChange = { instrucciones = it },
+                    label = { Text("Instrucciones de Retiro (Muelle, timbre, recipientes)") },
+                    minLines = 2,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RedPrimary, focusedLabelColor = RedPrimary)
+                )
+
+                OutlinedTextField(
+                    value = contacto,
+                    onValueChange = { contacto = it },
+                    label = { Text("Teléfono de Contacto Operativo") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = RedPrimary, focusedLabelColor = RedPrimary)
+                )
+
+                Button(
+                    onClick = {
+                        val cid = categoriaId ?: 1L
+                        val cant = cantidad.toDoubleOrNull() ?: 0.0
+                        val umin = unidadMinima.toDoubleOrNull() ?: 0.0
+                        val mult = multiplo.toDoubleOrNull() ?: 0.0
+                        viewModel.publicarLote(
+                            nombre = nombre,
+                            descripcion = descripcion,
+                            categoriaId = cid,
+                            cantidad = cant,
+                            unidadMinima = umin,
+                            multiplo = mult,
+                            estadoAlimento = estadoAlimento,
+                            horasVigencia = horasVigencia,
+                            ubicacion = ubicacion,
+                            instrucciones = instrucciones,
+                            contacto = contacto
+                        )
+                    },
+                    enabled = !uiState.isLoading,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = RedPrimary)
+                ) {
+                    if (uiState.isLoading) {
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(22.dp))
+                    } else {
+                        Icon(Icons.Default.Publish, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Publicar Donación en Catálogo", fontWeight = FontWeight.Bold, color = Color.White)
+                    }
                 }
             }
         }

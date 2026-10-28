@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.alimentared.data.model.StrikeResponse
 import com.example.alimentared.data.model.UsuarioResponse
+import com.example.alimentared.ui.components.AlimentaRedBackground
+import com.example.alimentared.ui.components.BackgroundPatternType
 import com.example.alimentared.ui.theme.BackgroundLight
 import com.example.alimentared.ui.theme.BlueDark
 import com.example.alimentared.ui.theme.RedDark
@@ -61,14 +63,17 @@ fun DetalleStrikesScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = BlueDark)
             )
         },
-        containerColor = BackgroundLight
+        containerColor = Color.Transparent
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
+        AlimentaRedBackground(
+            modifier = Modifier.padding(padding),
+            patternType = BackgroundPatternType.PERFIL
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             // 1. TARJETA RESUMEN DE LA ORGANIZACIÓN
@@ -357,5 +362,6 @@ fun DetalleStrikesScreen(
                 }
             }
         }
+    }
     }
 }

@@ -1,6 +1,5 @@
 package com.example.alimentared.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -37,7 +36,6 @@ fun InicioTabScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundLight)
             .padding(16.dp)
     ) {
         // BANNER DE ENCABEZADO DE NOTICIAS

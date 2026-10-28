@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.sp
 import com.example.alimentared.data.model.ApelacionStrikeRequest
 import com.example.alimentared.data.model.StrikeResponse
 import com.example.alimentared.data.remote.RetrofitClient
+import com.example.alimentared.ui.components.AlimentaRedBackground
+import com.example.alimentared.ui.components.BackgroundPatternType
 import com.example.alimentared.ui.theme.BackgroundLight
 import com.example.alimentared.ui.theme.BlueDark
 import com.example.alimentared.ui.theme.RedDark
@@ -107,14 +109,17 @@ fun PanelApelacionesScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = BlueDark)
             )
         },
-        containerColor = BackgroundLight
+        containerColor = Color.Transparent
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
+        AlimentaRedBackground(
+            modifier = Modifier.padding(padding),
+            patternType = BackgroundPatternType.PERFIL
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             // TARJETA EXPLICATIVA
@@ -315,6 +320,8 @@ fun PanelApelacionesScreen(
                 }
             }
         }
+    }
+
     }
 
     // DIÁLOGO DE EVALUACIÓN DE APELACIÓN

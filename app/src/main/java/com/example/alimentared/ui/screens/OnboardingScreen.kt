@@ -1,5 +1,6 @@
 package com.example.alimentared.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -7,7 +8,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Login
+import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -22,14 +25,15 @@ import com.example.alimentared.ui.theme.*
 
 @Composable
 fun OnboardingScreen(
-    onIrALogin: () -> Unit
+    onIrALogin: () -> Unit,
+    onIrAPruebas: () -> Unit
 ) {
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(BlueDark)
     ) {
-        // CORAZONES DE FONDO DECORATIVOS (Sutiles con alpha)
+        // LOGOS E ICONOS DE FONDO DECORATIVOS (Sutiles con alpha)
         Box(modifier = Modifier.fillMaxSize()) {
             Icon(
                 imageVector = Icons.Default.Favorite,
@@ -49,6 +53,26 @@ fun OnboardingScreen(
                     .align(Alignment.BottomEnd)
                     .offset(x = 60.dp, y = 40.dp)
                     .alpha(0.08f)
+            )
+            Icon(
+                imageVector = Icons.Default.VolunteerActivism,
+                contentDescription = null,
+                tint = RedPrimary,
+                modifier = Modifier
+                    .size(170.dp)
+                    .align(Alignment.CenterStart)
+                    .offset(x = (-50).dp, y = 140.dp)
+                    .alpha(0.06f)
+            )
+            Icon(
+                imageVector = Icons.Default.Eco,
+                contentDescription = null,
+                tint = Color(0xFF16A34A),
+                modifier = Modifier
+                    .size(140.dp)
+                    .align(Alignment.TopEnd)
+                    .offset(x = 40.dp, y = 30.dp)
+                    .alpha(0.06f)
             )
         }
 
@@ -150,20 +174,39 @@ fun OnboardingScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            // BOTÓN ACCESO UNIFICADO EN ROJO
+            // BOTÓN ACCESO REAL AL PORTAL
             Button(
                 onClick = onIrALogin,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(54.dp),
+                    .height(52.dp),
                 shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = RedPrimary)
             ) {
                 Icon(Icons.AutoMirrored.Filled.Login, contentDescription = null, tint = Color.White)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Ingresar al Portal de Acceso", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color.White)
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // BOTÓN MODO DE PRUEBAS RÁPIDAS
+            OutlinedButton(
+                onClick = onIrAPruebas,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(14.dp),
+                border = BorderStroke(1.5.dp, Color.White.copy(alpha = 0.4f)),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = Color.White
+                )
+            ) {
+                Icon(Icons.Default.Science, contentDescription = null, tint = RedPrimary)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Cuentas y Modo de Pruebas", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color.White)
             }
 
             Spacer(modifier = Modifier.height(16.dp))

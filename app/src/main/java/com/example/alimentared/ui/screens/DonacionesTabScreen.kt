@@ -1,6 +1,5 @@
 package com.example.alimentared.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -34,7 +33,6 @@ fun DonacionesTabScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundLight)
             .padding(16.dp)
     ) {
         // Encabezado con Botón de Donar si es Donante

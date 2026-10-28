@@ -38,16 +38,32 @@ fun AlimentaRedApp() {
 
         composable("onboarding") {
             OnboardingScreen(
-                onIrALogin = { navController.navigate("login") }
+                onIrALogin = { navController.navigate("login") },
+                onIrAPruebas = { navController.navigate("login_pruebas") }
             )
         }
 
         composable("login") {
             LoginScreen(
+                esModoPruebas = false,
                 onLoginExitoso = { rol ->
                     rolUsuarioActual = rol
                     navController.navigate("main") {
                         popUpTo("login") { inclusive = true }
+                        popUpTo("onboarding") { inclusive = true }
+                    }
+                },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable("login_pruebas") {
+            LoginScreen(
+                esModoPruebas = true,
+                onLoginExitoso = { rol ->
+                    rolUsuarioActual = rol
+                    navController.navigate("main") {
+                        popUpTo("login_pruebas") { inclusive = true }
                         popUpTo("onboarding") { inclusive = true }
                     }
                 },
@@ -62,7 +78,7 @@ fun AlimentaRedApp() {
                 onCrearLoteClick = { navController.navigate("publish") },
                 onCerrarSesion = {
                     sessionManager.clearSession()
-                    navController.navigate("login") {
+                    navController.navigate("onboarding") {
                         popUpTo("main") { inclusive = true }
                     }
                 }

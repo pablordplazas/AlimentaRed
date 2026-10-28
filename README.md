@@ -68,9 +68,12 @@ app/src/main/java/com/example/alimentared/
 │       └── SessionManager.kt        # Gestión persistente del token JWT, usuario actual y host backend
 ├── ui/
 │   ├── theme/                       # Paleta institucional (Azul Marino, Rojo Primario, Tipografía)
+│   ├── components/                  # Componentes reutilizables
+│   │   └── AlimentaRedBackground.kt # Fondos con degradados y marcas de agua temáticas (corazones, manos, eco, alimentos)
 │   ├── screens/                     # Pantallas declarativas en Jetpack Compose
 │   │   ├── OnboardingScreen.kt      # Presentación institucional y métricas de impacto iniciales
-│   │   ├── LoginScreen.kt           # Autenticación, registro, chips de acceso rápido y setup de red
+│   │   ├── LoginScreen.kt           # Autenticación, registro, chips de acceso rápido
+│   │   ├── ConfigurarServidorDialog.kt # Diálogo de configuración de red y host del backend para admin
 │   │   ├── MainAppScreen.kt         # Contenedor principal con barra de navegación inferior (5 pestañas)
 │   │   ├── InicioTabScreen.kt       # Resumen general y bienvenida
 │   │   ├── DonacionesTabScreen.kt   # Catálogo interactivo de lotes, filtros y modo Donante/Receptora
@@ -123,22 +126,22 @@ app/src/main/java/com/example/alimentared/
 
 ## 👥 Roles del Sistema y Usuarios de Prueba
 
-Para agilizar pruebas y demostraciones, la aplicación incorpora **chips de acceso rápido** en la pantalla de inicio de sesión:
+Para agilizar pruebas y demostraciones, la pantalla inicial cuenta con un botón dedicado **"Cuentas y Modo de Pruebas"** que despliega chips de acceso rápido interactivos, mientras que el botón **"Ingresar al Portal de Acceso"** ofrece la experiencia de autenticación estándar de producción:
 
 | Rol | Correo Electrónico | Contraseña | Propósito en el Flujo |
 | :--- | :--- | :--- | :--- |
 | **Receptora** | `receptora@pancompartido.org` | `Pass12345` | Explora catálogo, solicita donaciones y consulta retiros asignados. |
 | **Donante** | `donante@saborcasero.com` | `Pass12345` | Publica lotes, aprueba solicitudes y valida la entrega física. |
 | **Coordinador**| `coordinador@alimentared.com` | `Coord12345` | Resuelve alertas de inocuidad y supervisa el impacto global. |
-| **Admin** | `admin@alimentared.com` | `Admin12345` | Gestión global del sistema y evaluación de apelaciones de strikes. |
-| **Panadería Sol** | `suspendido@panaderiasol.com` | `Pass12345` | Cuenta donante con 3 strikes para verificar la regla de suspensión (RN08). |
-| **Abuelitos Paz**| `suspendido@abuelitospaz.org` | `Pass12345` | Cuenta receptora bloqueada para verificar el control de acceso en login. |
+| **Admin** | `admin@alimentared.com` | `Admin12345` | Gestión global del sistema, servidor y evaluación de apelaciones de strikes. |
+| **Panadería Sol** | `suspendido@panaderiasol.com` | `Pass12345` | Cuenta donante suspendida / bloqueada por acumulación de strikes (RN08). |
+| **Abuelitos de la Paz**| `suspendido@abuelitospaz.org` | `Pass12345` | Cuenta receptora con 2 strikes para verificar el seguimiento previo a la suspensión. |
 
 ---
 
 ## 🌐 Configuración del Servidor y Red LAN
 
-La aplicación cuenta con un **Selector Dinámico de Servidor** accesible desde el icono de configuración (`⚙️`) en la barra superior del Login:
+La aplicación cuenta con un **Selector Dinámico de Servidor** accesible exclusivamente para el usuario **Administrador** a través del botón con el icono de corazón (❤️) ubicado junto al botón de cerrar sesión en la barra superior:
 
 * **Emulador Oficial de Android:** Utiliza por defecto `http://10.0.2.2:8080/api/`.
 * **Dispositivo Físico (vía Wi-Fi):** Configura la IP local de tu máquina de desarrollo (ej. `http://192.168.1.XX:8080/api/`).

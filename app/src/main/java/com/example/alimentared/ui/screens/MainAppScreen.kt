@@ -1,8 +1,8 @@
 package com.example.alimentared.ui.screens
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -12,6 +12,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.example.alimentared.data.session.SessionManager
+import com.example.alimentared.ui.components.AlimentaRedBackground
+import com.example.alimentared.ui.components.BackgroundPatternType
 import com.example.alimentared.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -23,32 +25,34 @@ fun MainAppScreen(
     onCerrarSesion: () -> Unit
 ) {
     var pestañaActual by remember { mutableStateOf(0) }
+    var mostrarConfigServidor by remember { mutableStateOf(false) }
 
     val usuarioActual = remember {
         try { SessionManager.getInstance().getUsuario() } catch (e: Exception) { null }
     }
 
-    val rolNormalized = rolUsuario.uppercase()
+    val rolNormalized = (usuarioActual?.rol ?: rolUsuario).uppercase()
+    val esAdmin = rolNormalized == "ADMIN" || rolNormalized == "ADMINISTRADOR"
 
     // Definir pestañas dinámicas según el rol del usuario
     val tabs = when (rolNormalized) {
         "DONANTE" -> listOf(
             Triple("Inicio", Icons.Default.Home, 0),
             Triple("Mis Lotes", Icons.Default.Store, 1),
-            Triple("Solicitudes", Icons.Default.Assignment, 2),
+            Triple("Solicitudes", Icons.AutoMirrored.Filled.Assignment, 2),
             Triple("Calidad", Icons.Default.ReportProblem, 3),
             Triple("Impacto", Icons.Default.Person, 4)
         )
         "RECEPTORA" -> listOf(
             Triple("Inicio", Icons.Default.Home, 0),
             Triple("Catálogo", Icons.Default.VolunteerActivism, 1),
-            Triple("Solicitudes", Icons.Default.Assignment, 2),
+            Triple("Solicitudes", Icons.AutoMirrored.Filled.Assignment, 2),
             Triple("Calidad", Icons.Default.ReportProblem, 3),
             Triple("Impacto", Icons.Default.Person, 4)
         )
         "COORDINADOR" -> listOf(
             Triple("Inicio", Icons.Default.Home, 0),
-            Triple("Asignaciones", Icons.Default.Assignment, 1),
+            Triple("Asignaciones", Icons.AutoMirrored.Filled.Assignment, 1),
             Triple("Apelaciones", Icons.Default.Gavel, 2),
             Triple("Incidencias", Icons.Default.ReportProblem, 3),
             Triple("Perfil", Icons.Default.Person, 4)
@@ -63,7 +67,7 @@ fun MainAppScreen(
         else -> listOf(
             Triple("Inicio", Icons.Default.Home, 0),
             Triple("Catálogo", Icons.Default.VolunteerActivism, 1),
-            Triple("Solicitudes", Icons.Default.Assignment, 2),
+            Triple("Solicitudes", Icons.AutoMirrored.Filled.Assignment, 2),
             Triple("Calidad", Icons.Default.ReportProblem, 3),
             Triple("Perfil", Icons.Default.Person, 4)
         )
@@ -82,6 +86,15 @@ fun MainAppScreen(
                     )
                 },
                 actions = {
+                    if (esAdmin) {
+                        IconButton(onClick = { mostrarConfigServidor = true }) {
+                            Icon(
+                                imageVector = Icons.Default.Favorite,
+                                contentDescription = "Configurar Servidor Backend",
+                                tint = RedPrimary
+                            )
+                        }
+                    }
                     IconButton(onClick = onCerrarSesion) {
                         Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Salir", tint = Color.White)
                     }
@@ -108,7 +121,16 @@ fun MainAppScreen(
             }
         }
     ) { padding ->
-        Box(modifier = Modifier.padding(padding)) {
+        AlimentaRedBackground(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            patternType = when (pestañaActual) {
+                1 -> BackgroundPatternType.CATALOGO
+                4 -> BackgroundPatternType.PERFIL
+                else -> BackgroundPatternType.GENERAL
+            }
+        ) {
             when (pestañaActual) {
                 0 -> InicioTabScreen()
                 1 -> DonacionesTabScreen(
@@ -124,5 +146,11 @@ fun MainAppScreen(
                 4 -> PerfilScreen(onCerrarSesion = onCerrarSesion)
             }
         }
+    }
+
+    if (mostrarConfigServidor) {
+        ConfigurarServidorDialog(
+            onDismiss = { mostrarConfigServidor = false }
+        )
     }
 }
