@@ -147,7 +147,10 @@ fun MainAppScreen(
                     else -> SolicitudesScreen(onVolver = { pestañaActual = 1 })
                 }
                 3 -> IncidenciasScreen(onBack = { pestañaActual = 0 })
-                4 -> PerfilScreen(onCerrarSesion = onCerrarSesion)
+                4 -> PerfilScreen(
+                    onCerrarSesion = onCerrarSesion,
+                    onIrACatalogo = { pestañaActual = 1 }
+                )
             }
         }
     }

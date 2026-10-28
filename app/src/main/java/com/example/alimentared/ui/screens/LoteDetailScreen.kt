@@ -1,5 +1,6 @@
 package com.example.alimentared.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -303,6 +304,80 @@ fun LoteDetailScreen(
                                     fontSize = 11.sp,
                                     color = Color.Gray
                                 )
+                            }
+                        }
+                    }
+
+                    // DIFUSIÓN EN NOTICIAS DE INICIO (PARA COORDINADOR Y ADMIN)
+                    val esCoordinadorOAdmin = rolUsuario.contains("COORD", ignoreCase = true) || rolUsuario.contains("ADMIN", ignoreCase = true)
+                    if (esCoordinadorOAdmin && !esBorrador) {
+                        val noticiasManager = remember { com.example.alimentared.data.noticias.NoticiasManager.getInstance() }
+                        var esDestacado by remember { mutableStateOf(noticiasManager.esLoteDestacado(lote.id)) }
+                        var feedbackMsg by remember { mutableStateOf<String?>(null) }
+
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = if (esDestacado) Color(0xFFFFFBEB) else Color.White),
+                            shape = RoundedCornerShape(12.dp),
+                            border = if (esDestacado) BorderStroke(1.5.dp, Color(0xFFF59E0B)) else null,
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFF59E0B), modifier = Modifier.size(22.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Destacar Donación en Noticias de Inicio", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = BlueDark)
+                                }
+                                Text(
+                                    if (esDestacado) {
+                                        "Esta donación está actualmente publicada como noticia destacada en la pantalla de inicio para todos los usuarios."
+                                    } else {
+                                        "Como coordinador puedes destacar esta donación activa para darle máxima visibilidad en la sección inicial de noticias de la red."
+                                    },
+                                    fontSize = 12.sp,
+                                    color = Color.DarkGray,
+                                    lineHeight = 16.sp
+                                )
+
+                                if (feedbackMsg != null) {
+                                    Surface(
+                                        color = if (esDestacado) Color(0xFFDCFCE7) else Color(0xFFF1F5F9),
+                                        shape = RoundedCornerShape(8.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text(feedbackMsg!!, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (esDestacado) Color(0xFF14532D) else Color.DarkGray, modifier = Modifier.padding(8.dp))
+                                    }
+                                }
+
+                                Button(
+                                    onClick = {
+                                        val agregado = noticiasManager.toggleDestacarLote(lote)
+                                        esDestacado = agregado
+                                        feedbackMsg = if (agregado) {
+                                            "¡Donación destacada exitosamente en la pantalla de inicio!"
+                                        } else {
+                                            "La donación fue retirada de las noticias de inicio."
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (esDestacado) Color(0xFFD97706) else BlueDark
+                                    ),
+                                    shape = RoundedCornerShape(10.dp),
+                                    modifier = Modifier.fillMaxWidth().height(46.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = if (esDestacado) Icons.Default.Star else Icons.Default.StarOutline,
+                                        contentDescription = null,
+                                        tint = if (esDestacado) Color.White else Color(0xFFF59E0B),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        if (esDestacado) "⭐ Destacada en Noticias (Quitar)" else "⭐ Destacar en Noticias de Inicio",
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                }
                             }
                         }
                     }

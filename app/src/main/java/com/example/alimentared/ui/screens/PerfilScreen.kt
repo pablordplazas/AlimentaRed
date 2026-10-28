@@ -24,14 +24,16 @@ enum class PerfilSubVista {
     PERFIL,
     DETALLE_STRIKES,
     PANEL_APELACIONES,
-    PANEL_VERIFICACION
+    PANEL_VERIFICACION,
+    DESTACAR_ENTREGAS
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PerfilScreen(
     viewModel: PerfilImpactoViewModel = viewModel(),
-    onCerrarSesion: () -> Unit = {}
+    onCerrarSesion: () -> Unit = {},
+    onIrACatalogo: (() -> Unit)? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var subVista by remember { mutableStateOf(PerfilSubVista.PERFIL) }
@@ -51,6 +53,14 @@ fun PerfilScreen(
         }
         PerfilSubVista.PANEL_APELACIONES -> {
             PanelApelacionesScreen(
+                onBack = {
+                    subVista = PerfilSubVista.PERFIL
+                    viewModel.cargarDatos()
+                }
+            )
+        }
+        PerfilSubVista.DESTACAR_ENTREGAS -> {
+            DestacarEntregasScreen(
                 onBack = {
                     subVista = PerfilSubVista.PERFIL
                     viewModel.cargarDatos()
@@ -301,6 +311,64 @@ fun PerfilScreen(
                                     Icon(Icons.Default.Gavel, contentDescription = null, modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text("⚖️ Abrir Panel de Gestión de Apelaciones", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                }
+
+                                // BOTÓN DESPLEGABLE DESTACAR (COORDINADOR Y ADMIN)
+                                var menuDestacarExpanded by remember { mutableStateOf(false) }
+
+                                Box(modifier = Modifier.fillMaxWidth()) {
+                                    Button(
+                                        onClick = { menuDestacarExpanded = true },
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD97706)),
+                                        shape = RoundedCornerShape(8.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Icon(Icons.Default.Star, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text("⭐ Destacar Noticias en Inicio", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                                    }
+
+                                    DropdownMenu(
+                                        expanded = menuDestacarExpanded,
+                                        onDismissRequest = { menuDestacarExpanded = false },
+                                        modifier = Modifier.background(Color.White)
+                                    ) {
+                                        DropdownMenuItem(
+                                            leadingIcon = {
+                                                Icon(Icons.Default.VolunteerActivism, contentDescription = null, tint = Color(0xFFD97706), modifier = Modifier.size(20.dp))
+                                            },
+                                            text = {
+                                                Column {
+                                                    Text("Destacar Donaciones Disponibles", fontWeight = FontWeight.Bold, color = BlueDark, fontSize = 13.sp)
+                                                    Text("Ir al catálogo para seleccionar un lote activo y destacarlo", fontSize = 10.sp, color = Color.Gray)
+                                                }
+                                            },
+                                            onClick = {
+                                                menuDestacarExpanded = false
+                                                onIrACatalogo?.invoke()
+                                            }
+                                        )
+
+                                        HorizontalDivider(color = Color(0xFFF1F5F9))
+
+                                        DropdownMenuItem(
+                                            leadingIcon = {
+                                                Icon(Icons.Default.LocalShipping, contentDescription = null, tint = BlueDark, modifier = Modifier.size(20.dp))
+                                            },
+                                            text = {
+                                                Column {
+                                                    Text("Destacar Entregas de Comida", fontWeight = FontWeight.Bold, color = BlueDark, fontSize = 13.sp)
+                                                    Text("Ver entregas completadas para destacarlas en el inicio", fontSize = 10.sp, color = Color.Gray)
+                                                }
+                                            },
+                                            onClick = {
+                                                menuDestacarExpanded = false
+                                                subVista = PerfilSubVista.DESTACAR_ENTREGAS
+                                            }
+                                        )
+                                    }
                                 }
 
                                 if (rol.contains("ADMIN")) {
