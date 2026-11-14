@@ -1,18 +1,28 @@
 package com.example.alimentared.ui.screens
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.alimentared.data.session.SessionManager
 import com.example.alimentared.ui.components.AlimentaRedBackground
+import com.example.alimentared.ui.components.AlimentaRedTopBar
 import com.example.alimentared.ui.components.BackgroundPatternType
 import com.example.alimentared.ui.theme.*
 
@@ -38,7 +48,7 @@ fun MainAppScreen(
     val tabs = when (rolNormalized) {
         "DONANTE" -> listOf(
             Triple("Inicio", Icons.Default.Home, 0),
-            Triple("Mis Lotes", Icons.Default.Store, 1),
+            Triple("Mis Lotes", Icons.Default.Storefront, 1),
             Triple("Solicitudes", Icons.AutoMirrored.Filled.Assignment, 2),
             Triple("Calidad", Icons.Default.ReportProblem, 3),
             Triple("Impacto", Icons.Default.Person, 4)
@@ -48,7 +58,7 @@ fun MainAppScreen(
             Triple("Catálogo", Icons.Default.VolunteerActivism, 1),
             Triple("Solicitudes", Icons.AutoMirrored.Filled.Assignment, 2),
             Triple("Calidad", Icons.Default.ReportProblem, 3),
-            Triple("Impacto", Icons.Default.Person, 4)
+            Triple("Perfil", Icons.Default.Person, 4)
         )
         "COORDINADOR" -> listOf(
             Triple("Inicio", Icons.Default.Home, 0),
@@ -75,48 +85,123 @@ fun MainAppScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            AlimentaRedTopBar(
                 title = {
-                    Text(
-                        "ALIMENTARED • ${usuarioActual?.organizacion?.nombre ?: usuarioActual?.nombre ?: rolUsuario}",
-                        fontWeight = FontWeight.Black,
-                        fontSize = 15.sp,
-                        color = Color.White,
-                        maxLines = 1
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(
+                            shape = CircleShape,
+                            color = Color.White,
+                            modifier = Modifier.size(28.dp),
+                            shadowElevation = 1.dp
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Filled.Favorite,
+                                    contentDescription = "AlimentaRed",
+                                    tint = GreenSilver,
+                                    modifier = Modifier.size(17.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            "AlimentaRed • ${usuarioActual?.organizacion?.nombre ?: usuarioActual?.nombre ?: rolUsuario}",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            color = Color.White,
+                            maxLines = 1
+                        )
+                    }
                 },
                 actions = {
                     if (esAdmin) {
-                        IconButton(onClick = { mostrarConfigServidor = true }) {
+                        IconButton(onClick = { mostrarConfigServidor = true }, modifier = Modifier.size(36.dp)) {
                             Icon(
-                                imageVector = Icons.Default.Favorite,
+                                imageVector = Icons.Default.Settings,
                                 contentDescription = "Configurar Servidor Backend",
-                                tint = RedPrimary
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                     }
-                    IconButton(onClick = onCerrarSesion) {
-                        Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Salir", tint = Color.White)
+                    IconButton(onClick = onCerrarSesion, modifier = Modifier.size(36.dp)) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ExitToApp,
+                            contentDescription = "Salir",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = BlueDark)
+                }
             )
         },
         bottomBar = {
-            NavigationBar(containerColor = BlueDark, contentColor = Color.White) {
-                tabs.forEach { (title, icon, index) ->
-                    NavigationBarItem(
-                        selected = pestañaActual == index,
-                        onClick = { pestañaActual = index },
-                        icon = { Icon(icon, contentDescription = title) },
-                        label = { Text(title, fontSize = 9.sp, maxLines = 1) },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = RedPrimary,
-                            selectedTextColor = RedPrimary,
-                            unselectedIconColor = Color.Gray,
-                            unselectedTextColor = Color.Gray
-                        )
-                    )
+            // NAVBAR ELEGANTE ESTILO ECO ABASTO (Fondo blanco, píldora menta en elemento activo)
+            Surface(
+                color = EcoSurface,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(68.dp),
+                border = BorderStroke(1.dp, EcoBorder)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceAround,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    tabs.forEach { (title, icon, index) ->
+                        val isSelected = pestañaActual == index
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50))
+                                .clickable { pestañaActual = index }
+                                .padding(vertical = 4.dp, horizontal = if (isSelected) 8.dp else 4.dp)
+                        ) {
+                            if (isSelected) {
+                                Surface(
+                                    shape = RoundedCornerShape(50),
+                                    color = EcoMintGreen,
+                                    modifier = Modifier.padding(bottom = 2.dp)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = icon,
+                                            contentDescription = title,
+                                            tint = EcoForestGreen,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = title,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = EcoForestGreen
+                                        )
+                                    }
+                                }
+                            } else {
+                                Icon(
+                                    imageVector = icon,
+                                    contentDescription = title,
+                                    tint = EcoTextMuted,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                Text(
+                                    text = title,
+                                    fontSize = 10.sp,
+                                    color = EcoTextMuted,
+                                    maxLines = 1
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }

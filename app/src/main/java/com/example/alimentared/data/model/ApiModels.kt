@@ -18,6 +18,12 @@ data class LoginRequest(
     val contrasena: String
 )
 
+data class GoogleLoginRequest(
+    val idToken: String,
+    val correo: String? = null,
+    val nombre: String? = null
+)
+
 data class OrganizacionRegisterDto(
     val nit: String,
     val nombre: String,

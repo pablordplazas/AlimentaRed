@@ -4,212 +4,301 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Grass
 import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.alimentared.R
+import com.example.alimentared.ui.components.GoogleSignInDialog
+import com.example.alimentared.ui.components.getAlimentaRedTopPadding
 import com.example.alimentared.ui.theme.*
+import com.example.alimentared.ui.viewmodels.AuthViewModel
 
 @Composable
 fun OnboardingScreen(
     onIrALogin: () -> Unit,
-    onIrAPruebas: () -> Unit
+    onIrAPruebas: () -> Unit,
+    onLoginExitoso: ((String) -> Unit)? = null,
+    authViewModel: AuthViewModel = viewModel()
 ) {
+    val uiState by authViewModel.uiState.collectAsState()
+    var mostrarDialogoGoogle by remember { mutableStateOf(false) }
+    val topPadding = getAlimentaRedTopPadding()
+
+    LaunchedEffect(uiState.isSuccess, uiState.user) {
+        if (uiState.isSuccess && uiState.user != null && onLoginExitoso != null) {
+            onLoginExitoso(uiState.user!!.rol)
+        }
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(BlueDark)
+            .background(EcoBackground)
     ) {
-        // LOGOS E ICONOS DE FONDO DECORATIVOS (Sutiles con alpha)
-        Box(modifier = Modifier.fillMaxSize()) {
-            Icon(
-                imageVector = Icons.Default.Favorite,
-                contentDescription = null,
-                tint = RedPrimary,
-                modifier = Modifier
-                    .size(180.dp)
-                    .offset(x = (-40).dp, y = 60.dp)
-                    .alpha(0.08f)
-            )
-            Icon(
-                imageVector = Icons.Default.Favorite,
-                contentDescription = null,
-                tint = RedPrimary,
-                modifier = Modifier
-                    .size(240.dp)
-                    .align(Alignment.BottomEnd)
-                    .offset(x = 60.dp, y = 40.dp)
-                    .alpha(0.08f)
-            )
-            Icon(
-                imageVector = Icons.Default.VolunteerActivism,
-                contentDescription = null,
-                tint = RedPrimary,
-                modifier = Modifier
-                    .size(170.dp)
-                    .align(Alignment.CenterStart)
-                    .offset(x = (-50).dp, y = 140.dp)
-                    .alpha(0.06f)
-            )
-            Icon(
-                imageVector = Icons.Default.Eco,
-                contentDescription = null,
-                tint = Color(0xFF16A34A),
-                modifier = Modifier
-                    .size(140.dp)
-                    .align(Alignment.TopEnd)
-                    .offset(x = 40.dp, y = 30.dp)
-                    .alpha(0.06f)
-            )
-        }
-
-        // CONTENIDO PRINCIPAL
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(28.dp))
-
-            // BRANDING
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Surface(
-                    color = RedPrimary.copy(alpha = 0.2f),
-                    shape = RoundedCornerShape(20.dp),
-                    modifier = Modifier.padding(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Favorite,
-                        contentDescription = null,
-                        tint = RedPrimary,
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .size(56.dp)
+            // ARCO SUPERIOR ESTILO ECO ABASTO
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(220.dp + topPadding)
+                    .background(
+                        color = EcoOliveGreen,
+                        shape = RoundedCornerShape(bottomStart = 140.dp, bottomEnd = 140.dp)
                     )
-                }
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = "ALIMENTARED",
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Black,
-                    color = Color.White,
-                    letterSpacing = 2.sp
-                )
-                Text(
-                    text = "Plataforma de Rescate & Distribución Responsable",
-                    fontSize = 12.sp,
-                    color = TextMuted
-                )
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // TARJETA SOBRE NOSOTROS
-            Card(
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = BlueCard),
-                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-                modifier = Modifier.fillMaxWidth()
+                    .padding(top = topPadding),
+                contentAlignment = Alignment.Center
             ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.VolunteerActivism, contentDescription = null, tint = RedPrimary)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "¿Quiénes Somos?",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp,
-                            color = Color.White
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Text(
-                        text = "Somos una extensión de la plataforma de la Universidad de Cundinamarca, apoyando al ciudadano y familias en condición de vulnerabilidad mediante la recolección, control de calidad y redistribución eficiente de donaciones de alimentos.",
-                        fontSize = 13.sp,
-                        color = Color(0xFFCBD5E1),
-                        lineHeight = 18.sp
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-                    HorizontalDivider(color = Color(0xFF475569))
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = "Impacto Social Acumulado:",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp,
-                        color = RedPrimary
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    // Ícono circular blanco con corazón verde silver (AlimentaRed)
+                    Surface(
+                        modifier = Modifier.size(76.dp),
+                        shape = CircleShape,
+                        color = Color.White,
+                        shadowElevation = 4.dp
                     ) {
-                        Column {
-                            Text("+24,800 kg", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = Color.White)
-                            Text("Alimentos Rescatados", fontSize = 10.sp, color = TextMuted)
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.Favorite,
+                                contentDescription = "AlimentaRed Logo",
+                                tint = GreenSilver,
+                                modifier = Modifier.size(44.dp)
+                            )
                         }
-                        Column {
-                            Text("42", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = Color.White)
-                            Text("Fundaciones Beneficiadas", fontSize = 10.sp, color = TextMuted)
-                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    // Divisor vertical
+                    Box(
+                        modifier = Modifier
+                            .width(2.dp)
+                            .height(56.dp)
+                            .background(Color.White.copy(alpha = 0.6f))
+                    )
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    // Título AlimentaRed
+                    Column {
+                        Text(
+                            text = "Alimenta",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            lineHeight = 26.sp
+                        )
+                        Text(
+                            text = "Red",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            lineHeight = 26.sp
+                        )
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // BOTÓN ACCESO REAL AL PORTAL
-            Button(
-                onClick = onIrALogin,
+            // CONTENIDO CENTRAL
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = RedPrimary)
+                    .padding(horizontal = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Icon(Icons.AutoMirrored.Filled.Login, contentDescription = null, tint = Color.White)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Ingresar al Portal de Acceso", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color.White)
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // BOTÓN MODO DE PRUEBAS RÁPIDAS
-            OutlinedButton(
-                onClick = onIrAPruebas,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(14.dp),
-                border = BorderStroke(1.5.dp, Color.White.copy(alpha = 0.4f)),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = Color.White
+                Text(
+                    text = "¡Alimentando Comunidades!",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Black,
+                    color = EcoTextPrimary
                 )
-            ) {
-                Icon(Icons.Default.Science, contentDescription = null, tint = RedPrimary)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Cuentas y Modo de Pruebas", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color.White)
-            }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Plataforma de Rescate y Redistribución Sostenible",
+                    fontSize = 13.sp,
+                    color = EcoTextMuted,
+                    fontWeight = FontWeight.Medium
+                )
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // TARJETA SOBRE NOSOTROS (Estilo limpio Eco Abasto)
+                Card(
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = EcoSurface),
+                    border = BorderStroke(1.dp, EcoBorder),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Surface(
+                                shape = CircleShape,
+                                color = EcoMintLight,
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        Icons.Default.VolunteerActivism,
+                                        contentDescription = null,
+                                        tint = EcoForestGreen,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = "¿Quiénes Somos?",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 17.sp,
+                                color = EcoTextPrimary
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = "Somos una extensión comunitaria de la Universidad de Cundinamarca, articulando donantes y organizaciones sociales para rescatar alimentos aptos y reducir el desperdicio.",
+                            fontSize = 13.sp,
+                            color = EcoTextMuted,
+                            lineHeight = 18.sp
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                        HorizontalDivider(color = EcoBorder)
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Text(
+                            text = "Impacto Social Acumulado:",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = EcoForestGreen
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text("+24,800 kg", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = EcoTextPrimary)
+                                Text("Alimentos Rescatados", fontSize = 11.sp, color = EcoTextMuted)
+                            }
+                            Column {
+                                Text("42", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = EcoTextPrimary)
+                                Text("Fundaciones Beneficiadas", fontSize = 11.sp, color = EcoTextMuted)
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(28.dp))
+
+                // BOTÓN PRINCIPAL ESTILO PÍLDORA ECO ABASTO
+                Button(
+                    onClick = onIrALogin,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = RoundedCornerShape(50),
+                    colors = ButtonDefaults.buttonColors(containerColor = EcoForestGreen)
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.Login, contentDescription = null, tint = Color.White)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Ingresar al Portal de Acceso", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color.White)
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // BOTÓN SECUNDARIO MODO DE PRUEBAS
+                Button(
+                    onClick = onIrAPruebas,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = RoundedCornerShape(50),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = EcoSageGreen,
+                        contentColor = EcoTextPrimary
+                    )
+                ) {
+                    Icon(Icons.Default.Science, contentDescription = null, tint = EcoForestGreen)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Cuentas y Modo de Pruebas", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = EcoTextPrimary)
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // BOTÓN GOOGLE
+                OutlinedButton(
+                    onClick = { mostrarDialogoGoogle = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = RoundedCornerShape(50),
+                    border = BorderStroke(1.2.dp, Color(0xFFDADCE0)),
+                    colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_google),
+                            contentDescription = "Google",
+                            modifier = Modifier.size(22.dp),
+                            tint = Color.Unspecified
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = "Acceder con Google",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF3C4043)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+            }
         }
+    }
+
+    if (mostrarDialogoGoogle) {
+        GoogleSignInDialog(
+            onDismiss = { mostrarDialogoGoogle = false },
+            onCuentaSeleccionada = { idToken, correo, nombre, rol ->
+                mostrarDialogoGoogle = false
+                authViewModel.loginConGoogle(
+                    idToken = idToken,
+                    correo = correo,
+                    nombre = nombre,
+                    rol = rol
+                )
+            }
+        )
     }
 }

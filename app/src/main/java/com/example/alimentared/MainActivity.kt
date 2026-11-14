@@ -4,6 +4,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.*
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -14,6 +17,10 @@ import com.example.alimentared.ui.theme.AlimentaRedTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Ocultar barra de estado (elimina hora, señal, internet y batería en todas las pantallas)
+        ocultarBarraDeEstado()
+
         val session = SessionManager.initialize(applicationContext)
         com.example.alimentared.data.noticias.NoticiasManager.initialize(applicationContext)
         com.example.alimentared.data.remote.RetrofitClient.updateBaseUrl(session.getServerUrl())
@@ -23,6 +30,20 @@ class MainActivity : ComponentActivity() {
                 AlimentaRedApp()
             }
         }
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            ocultarBarraDeEstado()
+        }
+    }
+
+    private fun ocultarBarraDeEstado() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+        insetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        insetsController.hide(WindowInsetsCompat.Type.statusBars())
     }
 }
 
@@ -40,7 +61,13 @@ fun AlimentaRedApp() {
         composable("onboarding") {
             OnboardingScreen(
                 onIrALogin = { navController.navigate("login") },
-                onIrAPruebas = { navController.navigate("login_pruebas") }
+                onIrAPruebas = { navController.navigate("login_pruebas") },
+                onLoginExitoso = { rol ->
+                    rolUsuarioActual = rol
+                    navController.navigate("main") {
+                        popUpTo("onboarding") { inclusive = true }
+                    }
+                }
             )
         }
 

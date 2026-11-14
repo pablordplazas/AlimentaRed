@@ -1,17 +1,26 @@
 package com.example.alimentared.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Grass
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.RadioButtonChecked
+import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -20,14 +29,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.alimentared.ui.components.AlimentaRedBackground
-import com.example.alimentared.ui.components.BackgroundPatternType
+import com.example.alimentared.ui.components.AlimentaRedTopBar
+import com.example.alimentared.ui.components.GoogleSignInDialog
 import com.example.alimentared.ui.theme.*
 import com.example.alimentared.ui.viewmodels.AuthViewModel
 
@@ -42,8 +52,9 @@ fun LoginScreen(
     val uiState by authViewModel.uiState.collectAsState()
 
     var modoRegistro by remember { mutableStateOf(false) }
+    var mostrarDialogoGoogle by remember { mutableStateOf(false) }
 
-    // Campos Login (en modo normal inician vacíos; en pruebas pueden iniciar con receptora)
+    // Campos Login
     var email by remember { mutableStateOf(if (esModoPruebas) "receptora@pancompartido.org" else "") }
     var password by remember { mutableStateOf(if (esModoPruebas) "Pass12345" else "") }
     var showLoginPassword by remember { mutableStateOf(false) }
@@ -79,7 +90,6 @@ fun LoginScreen(
         var esValido = true
         var primerError: String? = null
 
-        // 1. NIT: numérico de 6 a 15 dígitos (opcional dígito de verificación con guion)
         val nitLimpio = regNit.trim()
         if (nitLimpio.isBlank()) {
             errorNit = "El NIT es obligatorio"
@@ -87,11 +97,10 @@ fun LoginScreen(
             esValido = false
         } else if (!Regex("^[0-9]{6,15}(-[0-9])?$").matches(nitLimpio)) {
             errorNit = "Debe tener entre 6 y 15 dígitos numéricos (ej. 900123456-7)"
-            if (primerError == null) primerError = "NIT inválido: debe tener entre 6 y 15 dígitos numéricos (ej. 900123456-7)"
+            if (primerError == null) primerError = "NIT inválido: debe tener entre 6 y 15 dígitos numéricos"
             esValido = false
         }
 
-        // 2. Nombre de la Organización: mínimo 3 caracteres
         val nombreOrgLimpio = regNombreOrg.trim()
         if (nombreOrgLimpio.isBlank()) {
             errorNombreOrg = "El nombre de la organización es obligatorio"
@@ -99,23 +108,21 @@ fun LoginScreen(
             esValido = false
         } else if (nombreOrgLimpio.length < 3) {
             errorNombreOrg = "El nombre es muy corto (mínimo 3 caracteres)"
-            if (primerError == null) primerError = "El nombre de la organización es muy corto (mínimo 3 caracteres)"
+            if (primerError == null) primerError = "El nombre de la organización es muy corto"
             esValido = false
         }
 
-        // 3. Correo Electrónico
         val correoLimpio = regCorreoOrg.trim()
         if (correoLimpio.isBlank()) {
             errorCorreoOrg = "El correo electrónico es obligatorio"
             if (primerError == null) primerError = "El correo electrónico es obligatorio"
             esValido = false
         } else if (!Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$").matches(correoLimpio)) {
-            errorCorreoOrg = "Formato de correo no válido (ej. contacto@organizacion.com)"
-            if (primerError == null) primerError = "Ingresa un correo electrónico válido (ej. contacto@organizacion.com)"
+            errorCorreoOrg = "Formato de correo no válido"
+            if (primerError == null) primerError = "Ingresa un correo electrónico válido"
             esValido = false
         }
 
-        // 4. Nombre del Representante: mínimo 3 caracteres
         val contactoLimpio = regContacto.trim()
         if (contactoLimpio.isBlank()) {
             errorContacto = "El nombre del representante es obligatorio"
@@ -123,22 +130,21 @@ fun LoginScreen(
             esValido = false
         } else if (contactoLimpio.length < 3) {
             errorContacto = "El nombre es muy corto (mínimo 3 caracteres)"
-            if (primerError == null) primerError = "El nombre del representante es muy corto (mínimo 3 caracteres)"
+            if (primerError == null) primerError = "El nombre del representante es muy corto"
             esValido = false
         }
 
-        // 5. Contraseña: mínimo 8 caracteres, letras y números
         if (regPassword.isBlank()) {
             errorPassword = "La contraseña es obligatoria"
             if (primerError == null) primerError = "La contraseña es obligatoria"
             esValido = false
         } else if (regPassword.length < 8) {
             errorPassword = "La contraseña es muy corta (mínimo 8 caracteres)"
-            if (primerError == null) primerError = "La contraseña es muy corta (debe tener al menos 8 caracteres)"
+            if (primerError == null) primerError = "La contraseña debe tener al menos 8 caracteres"
             esValido = false
         } else if (!regPassword.any { it.isLetter() } || !regPassword.any { it.isDigit() }) {
-            errorPassword = "Debe contener tanto letras como números (ej. Pass12345)"
-            if (primerError == null) primerError = "La contraseña debe contener letras y números (ej. Pass12345)"
+            errorPassword = "Debe contener tanto letras como números"
+            if (primerError == null) primerError = "La contraseña debe contener letras y números"
             esValido = false
         }
 
@@ -149,7 +155,6 @@ fun LoginScreen(
         return esValido
     }
 
-    // Cuentas de prueba rápidas corregidas
     val accesosRapidos = listOf(
         Triple("Receptora", "receptora@pancompartido.org", "Pass12345"),
         Triple("Donante", "donante@saborcasero.com", "Pass12345"),
@@ -165,374 +170,654 @@ fun LoginScreen(
         }
     }
 
-    val standardTextFieldColors = OutlinedTextFieldDefaults.colors(
-        focusedTextColor = Color.Black,
-        unfocusedTextColor = Color.Black,
-        errorTextColor = Color.Black,
-        focusedContainerColor = Color.White,
-        unfocusedContainerColor = Color.White,
-        errorContainerColor = Color.White,
-        focusedBorderColor = RedPrimary,
-        unfocusedBorderColor = Color(0xFFCBD5E1),
-        errorBorderColor = RedPrimary,
-        focusedLabelColor = RedPrimary,
-        unfocusedLabelColor = Color(0xFF475569),
-        errorLabelColor = RedPrimary,
-        focusedPlaceholderColor = Color(0xFF94A3B8),
-        unfocusedPlaceholderColor = Color(0xFF94A3B8),
-        cursorColor = RedPrimary,
-        errorCursorColor = RedPrimary
-    )
-    val standardTextStyle = androidx.compose.ui.text.TextStyle(
-        color = Color.Black,
-        fontSize = 14.sp,
-        fontWeight = FontWeight.Normal
+    val ecoTextFieldColors = OutlinedTextFieldDefaults.colors(
+        focusedTextColor = EcoTextPrimary,
+        unfocusedTextColor = EcoTextPrimary,
+        errorTextColor = EcoTextPrimary,
+        focusedContainerColor = EcoSurface,
+        unfocusedContainerColor = EcoSurface,
+        errorContainerColor = EcoSurface,
+        focusedBorderColor = EcoForestGreen,
+        unfocusedBorderColor = EcoBorder,
+        errorBorderColor = EcoRed,
+        focusedLabelColor = EcoForestGreen,
+        unfocusedLabelColor = EcoTextMuted,
+        errorLabelColor = EcoRed,
+        focusedPlaceholderColor = EcoTextMuted,
+        unfocusedPlaceholderColor = EcoTextMuted,
+        cursorColor = EcoForestGreen,
+        errorCursorColor = EcoRed
     )
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            AlimentaRedTopBar(
                 title = {
                     Text(
-                        if (modoRegistro) {
-                            "Registro de Organización"
-                        } else if (esModoPruebas) {
-                            "Acceso de Pruebas (Demo)"
-                        } else {
-                            "Portal de Acceso"
-                        },
+                        if (modoRegistro) "Crear Cuenta" else if (esModoPruebas) "Pruebas Rápidas" else "Iniciar Sesión",
                         color = Color.White,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White)
+                    IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White, modifier = Modifier.size(20.dp))
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = BlueDark)
+                }
             )
         },
-        containerColor = Color.Transparent
+        containerColor = EcoBackground
     ) { padding ->
-        AlimentaRedBackground(
-            modifier = Modifier.padding(padding),
-            patternType = BackgroundPatternType.LOGIN
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(
+            // ARCO SUPERIOR ALIMENTARED
+            Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .fillMaxWidth()
+                    .height(180.dp)
+                    .background(
+                        color = EcoOliveGreen,
+                        shape = RoundedCornerShape(bottomStart = 130.dp, bottomEnd = 130.dp)
+                    ),
+                contentAlignment = Alignment.Center
             ) {
-            // Título y selector de modo
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    if (modoRegistro) "Nueva Cuenta" else if (esModoPruebas) "Pruebas Rápidas" else "Iniciar Sesión",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Black,
-                    color = BlueDark
-                )
-                TextButton(onClick = {
-                    modoRegistro = !modoRegistro
-                    limpiarErroresLocales()
-                    authViewModel.limpiarError()
-                }) {
-                    Text(
-                        if (modoRegistro) "Ya tengo cuenta" else "Registrar Org",
-                        color = RedPrimary,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-
-            // Mensaje de Error / Alerta si existe
-            if (uiState.error != null) {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFEE2E2)),
-                    shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.fillMaxWidth()
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
                 ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.ErrorOutline, contentDescription = null, tint = RedPrimary)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            uiState.error!!,
-                            color = RedDark,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-            }
-
-            if (!modoRegistro) {
-                // SECCIÓN DE PRUEBAS: Sólo visible si esModoPruebas es true
-                if (esModoPruebas) {
+                    // Ícono circular blanco con corazón verde silver (AlimentaRed)
                     Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = BlueDark.copy(alpha = 0.05f),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.size(72.dp),
+                        shape = CircleShape,
+                        color = Color.White,
+                        shadowElevation = 4.dp
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(Icons.Default.Science, contentDescription = null, tint = RedPrimary, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                "Selecciona una cuenta rápida para simular los roles y estados del sistema:",
-                                fontSize = 11.sp,
-                                color = Color.DarkGray
-                            )
-                        }
-                    }
-
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(accesosRapidos) { (label, correo, pass) ->
-                            FilterChip(
-                                selected = (email == correo),
-                                onClick = {
-                                    email = correo
-                                    password = pass
-                                    authViewModel.limpiarError()
-                                },
-                                label = { Text(label, fontSize = 11.sp) },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = RedPrimary.copy(alpha = 0.15f),
-                                    selectedLabelColor = RedPrimary
-                                )
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(2.dp))
-                }
-
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it; authViewModel.limpiarError() },
-                    label = { Text("Correo Electrónico") },
-                    placeholder = { Text("ejemplo@organizacion.com") },
-                    singleLine = true,
-                    textStyle = standardTextStyle,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = standardTextFieldColors
-                )
-
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it; authViewModel.limpiarError() },
-                    label = { Text("Contraseña") },
-                    singleLine = true,
-                    textStyle = standardTextStyle,
-                    visualTransformation = if (showLoginPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                    trailingIcon = {
-                        IconButton(onClick = { showLoginPassword = !showLoginPassword }) {
+                        Box(contentAlignment = Alignment.Center) {
                             Icon(
-                                if (showLoginPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                contentDescription = if (showLoginPassword) "Ocultar contraseña" else "Mostrar contraseña",
-                                tint = Color.Gray
+                                imageVector = Icons.Default.Favorite,
+                                contentDescription = "AlimentaRed Logo",
+                                tint = GreenSilver,
+                                modifier = Modifier.size(42.dp)
                             )
                         }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = standardTextFieldColors
-                )
+                    }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.width(16.dp))
 
-                Button(
-                    onClick = { authViewModel.login(email, password) },
-                    enabled = !uiState.isLoading,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = RedPrimary)
-                ) {
-                    if (uiState.isLoading) {
-                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(22.dp))
-                    } else {
-                        Icon(Icons.Default.Lock, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .width(2.dp)
+                            .height(52.dp)
+                            .background(Color.White.copy(alpha = 0.6f))
+                    )
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Column {
                         Text(
-                            if (esModoPruebas) "Probar Ingreso con esta Cuenta" else "Ingresar a AlimentaRed",
+                            text = "Alimenta",
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                        Text(
+                            text = "Red",
+                            fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
                     }
                 }
-            } else {
-                // SECCIÓN REGISTRO (RF02)
-                Text("Tipo de Organización:", color = Color.Gray, fontSize = 12.sp)
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    FilterChip(
-                        selected = regRol == "RECEPTORA",
-                        onClick = { regRol = "RECEPTORA"; authViewModel.limpiarError() },
-                        label = { Text("Fundación Receptora") },
-                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = RedPrimary.copy(alpha = 0.15f), selectedLabelColor = RedPrimary)
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // CUERPO DEL FORMULARIO
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                // TÍTULO Y SUBTÍTULO
+                Column {
+                    Text(
+                        text = if (modoRegistro) "Crea tu cuenta" else "¡Bienvenido de nuevo!",
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Black,
+                        color = EcoOliveGreen
                     )
-                    FilterChip(
-                        selected = regRol == "DONANTE",
-                        onClick = { regRol = "DONANTE"; authViewModel.limpiarError() },
-                        label = { Text("Comercio Donante") },
-                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = RedPrimary.copy(alpha = 0.15f), selectedLabelColor = RedPrimary)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = if (modoRegistro) "Únete a Eco Abasto • AlimentaRed" else "Inicia sesión a tu cuenta",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF75865E)
                     )
                 }
 
-                // 1. NIT
-                OutlinedTextField(
-                    value = regNit,
-                    onValueChange = {
-                        regNit = it
-                        errorNit = null
-                        authViewModel.limpiarError()
-                    },
-                    label = { Text("NIT / Identificación Fiscal") },
-                    placeholder = { Text("Ej: 900123456-7") },
-                    singleLine = true,
-                    textStyle = standardTextStyle,
-                    isError = errorNit != null,
-                    supportingText = if (errorNit != null) {
-                        { Text(errorNit!!, color = RedPrimary, fontSize = 11.sp) }
-                    } else null,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = standardTextFieldColors
-                )
-
-                // 2. Nombre de la Organización
-                OutlinedTextField(
-                    value = regNombreOrg,
-                    onValueChange = {
-                        regNombreOrg = it
-                        errorNombreOrg = null
-                        authViewModel.limpiarError()
-                    },
-                    label = { Text("Nombre de la Organización") },
-                    placeholder = { Text("Ej: Nikopolleria") },
-                    singleLine = true,
-                    textStyle = standardTextStyle,
-                    isError = errorNombreOrg != null,
-                    supportingText = if (errorNombreOrg != null) {
-                        { Text(errorNombreOrg!!, color = RedPrimary, fontSize = 11.sp) }
-                    } else null,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = standardTextFieldColors
-                )
-
-                // 3. Correo Electrónico
-                OutlinedTextField(
-                    value = regCorreoOrg,
-                    onValueChange = {
-                        regCorreoOrg = it
-                        errorCorreoOrg = null
-                        authViewModel.limpiarError()
-                    },
-                    label = { Text("Correo Electrónico") },
-                    placeholder = { Text("ejemplo@organizacion.com") },
-                    singleLine = true,
-                    textStyle = standardTextStyle,
-                    isError = errorCorreoOrg != null,
-                    supportingText = if (errorCorreoOrg != null) {
-                        { Text(errorCorreoOrg!!, color = RedPrimary, fontSize = 11.sp) }
-                    } else null,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = standardTextFieldColors
-                )
-
-                // 4. Nombre del Representante
-                OutlinedTextField(
-                    value = regContacto,
-                    onValueChange = {
-                        regContacto = it
-                        errorContacto = null
-                        authViewModel.limpiarError()
-                    },
-                    label = { Text("Nombre del Representante") },
-                    placeholder = { Text("Ej: Nicolas Rodriguez") },
-                    singleLine = true,
-                    textStyle = standardTextStyle,
-                    isError = errorContacto != null,
-                    supportingText = if (errorContacto != null) {
-                        { Text(errorContacto!!, color = RedPrimary, fontSize = 11.sp) }
-                    } else null,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = standardTextFieldColors
-                )
-
-                // 5. Contraseña
-                OutlinedTextField(
-                    value = regPassword,
-                    onValueChange = {
-                        regPassword = it
-                        errorPassword = null
-                        authViewModel.limpiarError()
-                    },
-                    label = { Text("Contraseña (mínimo 8 caracteres)") },
-                    placeholder = { Text("Mínimo 8 letras y números") },
-                    singleLine = true,
-                    textStyle = standardTextStyle,
-                    visualTransformation = if (showRegisterPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                    trailingIcon = {
-                        IconButton(onClick = { showRegisterPassword = !showRegisterPassword }) {
-                            Icon(
-                                if (showRegisterPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                contentDescription = if (showRegisterPassword) "Ocultar contraseña" else "Mostrar contraseña",
-                                tint = Color.Gray
-                            )
+                // MENSAJE DE ÉXITO O ERROR
+                if (uiState.isSuccess) {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = EcoMintGreen),
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Surface(
+                                shape = CircleShape,
+                                color = Color.White,
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(Icons.Default.Check, contentDescription = null, tint = EcoForestGreen, modifier = Modifier.size(20.dp))
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = if (modoRegistro) "Cuenta creada con éxito" else "Sesión iniciada",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    color = EcoTextPrimary
+                                )
+                                Text(
+                                    text = if (modoRegistro) "Tu organización ha sido registrada." else "Tu acceso se ha confirmado correctamente.",
+                                    fontSize = 12.sp,
+                                    color = EcoForestGreen
+                                )
+                            }
                         }
-                    },
-                    isError = errorPassword != null,
-                    supportingText = if (errorPassword != null) {
-                        { Text(errorPassword!!, color = RedPrimary, fontSize = 11.sp) }
-                    } else {
-                        { Text("Debe tener al menos 8 caracteres, combinando letras y números.", color = Color.Gray, fontSize = 10.sp) }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = standardTextFieldColors
-                )
-
-                Button(
-                    onClick = {
-                        if (validarCamposRegistro()) {
-                            authViewModel.register(
-                                nit = regNit,
-                                orgNombre = regNombreOrg,
-                                correoOrg = regCorreoOrg,
-                                telefono = regTelefono,
-                                ubicacion = regUbicacion,
-                                nombreContacto = regContacto,
-                                contrasena = regPassword,
-                                rol = regRol
-                            )
-                        }
-                    },
-                    enabled = !uiState.isLoading,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = RedPrimary)
-                ) {
-                    if (uiState.isLoading) {
-                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(22.dp))
-                    } else {
-                        Icon(Icons.Default.PersonAdd, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Crear Cuenta de Organización", fontWeight = FontWeight.Bold, color = Color.White)
                     }
                 }
+
+                if (uiState.error != null) {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = EcoRedLight),
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.ErrorOutline, contentDescription = null, tint = EcoRed)
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                uiState.error!!,
+                                color = EcoRed,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                }
+
+                // SELECTOR MODO PRUEBAS RÁPIDAS
+                if (!modoRegistro && esModoPruebas) {
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = EcoMintLight,
+                        border = BorderStroke(1.dp, EcoMintGreen),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Science, contentDescription = null, tint = EcoForestGreen, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    "Cuentas rápidas de demostración:",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = EcoForestGreen
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                items(accesosRapidos) { (label, correo, pass) ->
+                                    val isSelected = (email == correo)
+                                    FilterChip(
+                                        selected = isSelected,
+                                        onClick = {
+                                            email = correo
+                                            password = pass
+                                            authViewModel.limpiarError()
+                                        },
+                                        shape = RoundedCornerShape(50),
+                                        label = { Text(label, fontSize = 11.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = EcoMintGreen,
+                                            selectedLabelColor = EcoForestGreen,
+                                            containerColor = Color.White
+                                        ),
+                                        border = FilterChipDefaults.filterChipBorder(
+                                            enabled = true,
+                                            selected = isSelected,
+                                            borderColor = if (isSelected) EcoForestGreen else EcoBorder
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (!modoRegistro) {
+                    // FORMULARIO DE INICIO DE SESIÓN
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it; authViewModel.limpiarError() },
+                        placeholder = { Text("Correo o Usuario", fontSize = 14.sp) },
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ecoTextFieldColors
+                    )
+
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it; authViewModel.limpiarError() },
+                        placeholder = { Text("Contraseña", fontSize = 14.sp) },
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp),
+                        visualTransformation = if (showLoginPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { showLoginPassword = !showLoginPassword }) {
+                                Icon(
+                                    if (showLoginPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = if (showLoginPassword) "Ocultar" else "Mostrar",
+                                    tint = EcoForestGreen
+                                )
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ecoTextFieldColors
+                    )
+
+                    // ENLACE OLVIDÓ CONTRASEÑA
+                    Text(
+                        text = "Olvidó su contraseña",
+                        fontSize = 11.sp,
+                        color = EcoTextMuted,
+                        modifier = Modifier.padding(start = 4.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // BOTÓN INICIAR SESIÓN (PÍLDORA VERDE OLIVA / BOSQUE)
+                    Button(
+                        onClick = { authViewModel.login(email, password) },
+                        enabled = !uiState.isLoading,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                        shape = RoundedCornerShape(50),
+                        colors = ButtonDefaults.buttonColors(containerColor = EcoOliveGreen)
+                    ) {
+                        if (uiState.isLoading) {
+                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(22.dp))
+                        } else {
+                            Icon(Icons.Default.Lock, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Iniciar Sesión",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp,
+                                color = Color.White
+                            )
+                        }
+                    }
+
+                    // SEPARADOR ELEGANTE "O continúa con"
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        HorizontalDivider(modifier = Modifier.weight(1f), color = EcoBorder)
+                        Text(
+                            text = "  O continúa con  ",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = EcoTextMuted
+                        )
+                        HorizontalDivider(modifier = Modifier.weight(1f), color = EcoBorder)
+                    }
+
+                    // BOTÓN INICIAR SESIÓN CON GOOGLE OFICIAL
+                    OutlinedButton(
+                        onClick = { mostrarDialogoGoogle = true },
+                        enabled = !uiState.isLoading,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                        shape = RoundedCornerShape(50),
+                        border = BorderStroke(1.2.dp, Color(0xFFDADCE0)),
+                        colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(id = com.example.alimentared.R.drawable.ic_google),
+                                contentDescription = "Google",
+                                modifier = Modifier.size(22.dp),
+                                tint = Color.Unspecified
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = "Continuar con Google",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF3C4043)
+                            )
+                        }
+                    }
+
+                    // ENLACE CREAR CUENTA
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "¿No tienes cuenta? Crea una",
+                            fontSize = 13.sp,
+                            color = EcoTextMuted,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.clickable {
+                                modoRegistro = true
+                                limpiarErroresLocales()
+                                authViewModel.limpiarError()
+                            }
+                        )
+                    }
+
+                } else {
+                    // FORMULARIO DE REGISTRO
+                    Text(
+                        "¿Cómo quieres participar?",
+                        fontSize = 13.sp,
+                        color = EcoTextMuted,
+                        fontWeight = FontWeight.Medium
+                    )
+
+                    // SELECTOR DE ROL ESTILO ECO ABASTO (2 PÍLDORAS)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        // Donador
+                        Surface(
+                            shape = RoundedCornerShape(50),
+                            color = if (regRol == "DONANTE") Color(0xFFF0F4E8) else EcoSurface,
+                            border = BorderStroke(1.dp, if (regRol == "DONANTE") EcoOliveGreen else EcoBorder),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(46.dp)
+                                .clickable {
+                                    regRol = "DONANTE"
+                                    authViewModel.limpiarError()
+                                }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 14.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = if (regRol == "DONANTE") Icons.Default.RadioButtonChecked else Icons.Default.RadioButtonUnchecked,
+                                    contentDescription = null,
+                                    tint = if (regRol == "DONANTE") EcoOliveGreen else EcoTextMuted,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    "Donador",
+                                    fontSize = 13.sp,
+                                    fontWeight = if (regRol == "DONANTE") FontWeight.Bold else FontWeight.Normal,
+                                    color = if (regRol == "DONANTE") EcoOliveGreen else EcoTextMuted
+                                )
+                            }
+                        }
+
+                        // Organización Receptora
+                        Surface(
+                            shape = RoundedCornerShape(50),
+                            color = if (regRol == "RECEPTORA") Color(0xFFF0F4E8) else EcoSurface,
+                            border = BorderStroke(1.dp, if (regRol == "RECEPTORA") EcoOliveGreen else EcoBorder),
+                            modifier = Modifier
+                                .weight(1.3f)
+                                .height(46.dp)
+                                .clickable {
+                                    regRol = "RECEPTORA"
+                                    authViewModel.limpiarError()
+                                }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 14.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = if (regRol == "RECEPTORA") Icons.Default.RadioButtonChecked else Icons.Default.RadioButtonUnchecked,
+                                    contentDescription = null,
+                                    tint = if (regRol == "RECEPTORA") EcoOliveGreen else EcoTextMuted,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    "Receptora",
+                                    fontSize = 13.sp,
+                                    fontWeight = if (regRol == "RECEPTORA") FontWeight.Bold else FontWeight.Normal,
+                                    color = if (regRol == "RECEPTORA") EcoOliveGreen else EcoTextMuted
+                                )
+                            }
+                        }
+                    }
+
+                    // 1. Nombre completo / representante
+                    OutlinedTextField(
+                        value = regContacto,
+                        onValueChange = {
+                            regContacto = it
+                            errorContacto = null
+                            authViewModel.limpiarError()
+                        },
+                        placeholder = { Text("Nombre completo del representante", fontSize = 13.sp) },
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp),
+                        isError = errorContacto != null,
+                        supportingText = if (errorContacto != null) {
+                            { Text(errorContacto!!, color = EcoRed, fontSize = 11.sp) }
+                        } else null,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ecoTextFieldColors
+                    )
+
+                    // 2. Nombre de la Organización
+                    OutlinedTextField(
+                        value = regNombreOrg,
+                        onValueChange = {
+                            regNombreOrg = it
+                            errorNombreOrg = null
+                            authViewModel.limpiarError()
+                        },
+                        placeholder = { Text("Nombre de la organización", fontSize = 13.sp) },
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp),
+                        isError = errorNombreOrg != null,
+                        supportingText = if (errorNombreOrg != null) {
+                            { Text(errorNombreOrg!!, color = EcoRed, fontSize = 11.sp) }
+                        } else null,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ecoTextFieldColors
+                    )
+
+                    // 3. NIT / Identificación Fiscal
+                    OutlinedTextField(
+                        value = regNit,
+                        onValueChange = {
+                            regNit = it
+                            errorNit = null
+                            authViewModel.limpiarError()
+                        },
+                        placeholder = { Text("NIT / Identificación Fiscal (ej: 900123456-7)", fontSize = 13.sp) },
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp),
+                        isError = errorNit != null,
+                        supportingText = if (errorNit != null) {
+                            { Text(errorNit!!, color = EcoRed, fontSize = 11.sp) }
+                        } else null,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ecoTextFieldColors
+                    )
+
+                    // 4. Correo electrónico
+                    OutlinedTextField(
+                        value = regCorreoOrg,
+                        onValueChange = {
+                            regCorreoOrg = it
+                            errorCorreoOrg = null
+                            authViewModel.limpiarError()
+                        },
+                        placeholder = { Text("Correo electrónico", fontSize = 13.sp) },
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp),
+                        isError = errorCorreoOrg != null,
+                        supportingText = if (errorCorreoOrg != null) {
+                            { Text(errorCorreoOrg!!, color = EcoRed, fontSize = 11.sp) }
+                        } else null,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ecoTextFieldColors
+                    )
+
+                    // 5. Dirección
+                    OutlinedTextField(
+                        value = regUbicacion,
+                        onValueChange = { regUbicacion = it },
+                        placeholder = { Text("Dirección", fontSize = 13.sp) },
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ecoTextFieldColors
+                    )
+
+                    // 6. Contraseña
+                    OutlinedTextField(
+                        value = regPassword,
+                        onValueChange = {
+                            regPassword = it
+                            errorPassword = null
+                            authViewModel.limpiarError()
+                        },
+                        placeholder = { Text("Contraseña", fontSize = 13.sp) },
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp),
+                        visualTransformation = if (showRegisterPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { showRegisterPassword = !showRegisterPassword }) {
+                                Icon(
+                                    if (showRegisterPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = if (showRegisterPassword) "Ocultar" else "Mostrar",
+                                    tint = EcoForestGreen
+                                )
+                            }
+                        },
+                        isError = errorPassword != null,
+                        supportingText = {
+                            Text(
+                                errorPassword ?: "Usa al menos 8 caracteres.",
+                                color = if (errorPassword != null) EcoRed else EcoTextMuted,
+                                fontSize = 11.sp
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ecoTextFieldColors
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // BOTÓN CREAR CUENTA (PÍLDORA)
+                    Button(
+                        onClick = {
+                            if (validarCamposRegistro()) {
+                                authViewModel.register(
+                                    nit = regNit,
+                                    orgNombre = regNombreOrg,
+                                    correoOrg = regCorreoOrg,
+                                    telefono = regTelefono,
+                                    ubicacion = regUbicacion,
+                                    nombreContacto = regContacto,
+                                    contrasena = regPassword,
+                                    rol = regRol
+                                )
+                            }
+                        },
+                        enabled = !uiState.isLoading,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                        shape = RoundedCornerShape(50),
+                        colors = ButtonDefaults.buttonColors(containerColor = EcoOliveGreen)
+                    ) {
+                        if (uiState.isLoading) {
+                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(22.dp))
+                        } else {
+                            Icon(Icons.Default.PersonAdd, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Crear cuenta", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color.White)
+                        }
+                    }
+
+                    // ENLACE VOLVER A LOGIN
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "¿Ya tienes cuenta? Inicia sesión",
+                            fontSize = 13.sp,
+                            color = EcoTextMuted,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.clickable {
+                                modoRegistro = false
+                                limpiarErroresLocales()
+                                authViewModel.limpiarError()
+                            }
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
             }
         }
     }
-}
+
+    if (mostrarDialogoGoogle) {
+        GoogleSignInDialog(
+            onDismiss = { mostrarDialogoGoogle = false },
+            onCuentaSeleccionada = { idToken, correo, nombre, rol ->
+                mostrarDialogoGoogle = false
+                authViewModel.loginConGoogle(
+                    idToken = idToken,
+                    correo = correo,
+                    nombre = nombre,
+                    rol = rol
+                )
+            }
+        )
+    }
 }

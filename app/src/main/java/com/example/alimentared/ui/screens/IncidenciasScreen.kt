@@ -1,5 +1,6 @@
 package com.example.alimentared.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -8,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,8 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.alimentared.data.model.IncidenciaResponse
-import com.example.alimentared.ui.components.AlimentaRedBackground
-import com.example.alimentared.ui.components.BackgroundPatternType
+import com.example.alimentared.ui.components.AlimentaRedTopBar
 import com.example.alimentared.ui.theme.*
 import com.example.alimentared.ui.viewmodels.IncidenciasViewModel
 
@@ -39,66 +40,104 @@ fun IncidenciasScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Gestión de Calidad e Inocuidad", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White)
-                    }
+            AlimentaRedTopBar(
+                title = {
+                    Text(
+                        "Gestión de Calidad e Inocuidad",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp
+                    )
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = BlueDark)
+                navigationIcon = {
+                    IconButton(
+                        onClick = onBack,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Volver",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
             )
         },
-        containerColor = Color.Transparent
+        containerColor = EcoBackground
     ) { padding ->
-        AlimentaRedBackground(
-            modifier = Modifier.padding(padding),
-            patternType = BackgroundPatternType.GENERAL
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Reportes de Inocuidad", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = BlueDark)
+                Text("Reportes de Inocuidad", fontWeight = FontWeight.Bold, fontSize = 17.sp, color = EcoTextPrimary)
                 Button(
                     onClick = { mostrarFormulario = !mostrarFormulario },
-                    colors = ButtonDefaults.buttonColors(containerColor = RedPrimary),
-                    shape = RoundedCornerShape(8.dp)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (mostrarFormulario) EcoSageGreen else EcoForestGreen,
+                        contentColor = if (mostrarFormulario) EcoTextPrimary else Color.White
+                    ),
+                    shape = RoundedCornerShape(50),
+                    modifier = Modifier.height(38.dp)
                 ) {
-                    Text(if (mostrarFormulario) "Ver Lista" else "Reportar", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text(if (mostrarFormulario) "Ver Lista" else "+ Reportar", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
             }
 
             if (uiState.mensaje != null) {
-                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFDCFCE7)), modifier = Modifier.fillMaxWidth()) {
-                    Text(uiState.mensaje!!, color = Color(0xFF14532D), fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(10.dp))
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = EcoMintGreen),
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = EcoForestGreen)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(uiState.mensaje!!, color = EcoForestGreen, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
             if (uiState.error != null) {
-                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFEE2E2)), modifier = Modifier.fillMaxWidth()) {
-                    Text(uiState.error!!, color = RedDark, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(10.dp))
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = EcoRedLight),
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.ErrorOutline, contentDescription = null, tint = EcoRed)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(uiState.error!!, color = EcoRed, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
 
             if (mostrarFormulario) {
-                // FORMULARIO DE REPORTE
-                Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("Reportar Problema en Lote", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = BlueDark)
-                        Text("El reporte bloqueará preventivamente el lote para evitar distribución de producto no inocuo.", fontSize = 11.sp, color = Color.Gray)
+                // FORMULARIO DE REPORTE ESTILO ECO ABASTO
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = EcoSurface),
+                    shape = RoundedCornerShape(20.dp),
+                    border = BorderStroke(1.dp, EcoBorder),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text("Reportar Problema en Lote", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = EcoTextPrimary)
+                        Text("El reporte bloqueará preventivamente el lote para evitar distribución de producto no inocuo.", fontSize = 12.sp, color = EcoTextMuted)
 
                         OutlinedTextField(
                             value = nuevoLoteId,
                             onValueChange = { nuevoLoteId = it },
                             label = { Text("ID del Lote") },
                             singleLine = true,
+                            shape = RoundedCornerShape(14.dp),
                             modifier = Modifier.fillMaxWidth()
                         )
 
@@ -107,6 +146,7 @@ fun IncidenciasScreen(
                             onValueChange = { nuevosDetalles = it },
                             label = { Text("Detalle de la anomalía (cadena de frío, empaque roto, etc.)") },
                             minLines = 3,
+                            shape = RoundedCornerShape(14.dp),
                             modifier = Modifier.fillMaxWidth()
                         )
 
@@ -117,11 +157,11 @@ fun IncidenciasScreen(
                                 nuevosDetalles = ""
                             },
                             enabled = !uiState.isLoading && nuevosDetalles.length >= 10,
-                            colors = ButtonDefaults.buttonColors(containerColor = RedPrimary),
-                            modifier = Modifier.fillMaxWidth().height(48.dp),
-                            shape = RoundedCornerShape(10.dp)
+                            colors = ButtonDefaults.buttonColors(containerColor = EcoForestGreen),
+                            modifier = Modifier.fillMaxWidth().height(50.dp),
+                            shape = RoundedCornerShape(50)
                         ) {
-                            Text("Enviar Reporte de Inocuidad", fontWeight = FontWeight.Bold)
+                            Text("Enviar Reporte de Inocuidad", fontWeight = FontWeight.Bold, color = Color.White)
                         }
                     }
                 }
@@ -129,14 +169,14 @@ fun IncidenciasScreen(
                 // LISTADO DE INCIDENCIAS
                 if (uiState.isLoading) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = RedPrimary)
+                        CircularProgressIndicator(color = EcoForestGreen)
                     }
                 } else if (uiState.incidencias.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("No hay incidencias activas reportadas", color = Color.Gray, fontSize = 13.sp)
+                        Text("No hay incidencias activas reportadas", color = EcoTextMuted, fontSize = 13.sp)
                     }
                 } else {
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         items(uiState.incidencias) { inc ->
                             IncidenciaCard(
                                 incidencia = inc,
@@ -150,7 +190,6 @@ fun IncidenciasScreen(
             }
         }
     }
-    }
 }
 
 @Composable
@@ -159,51 +198,53 @@ fun IncidenciaCard(
     onResolver: (Boolean, String) -> Unit
 ) {
     Card(
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = EcoSurface),
+        border = BorderStroke(1.dp, EcoBorder),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("INCIDENCIA #${incidencia.id} - LOTE ${incidencia.loteId}", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = RedPrimary)
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text("INCIDENCIA #${incidencia.id} - LOTE ${incidencia.loteId}", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = EcoOliveGreen)
                 Surface(
-                    color = if (incidencia.resuelta) Color(0xFFDCFCE7) else Color(0xFFFEE2E2),
-                    shape = RoundedCornerShape(6.dp)
+                    color = if (incidencia.resuelta) EcoMintGreen else EcoRedLight,
+                    shape = RoundedCornerShape(50)
                 ) {
                     Text(
                         if (incidencia.resuelta) "RESUELTA" else "PENDIENTE",
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (incidencia.resuelta) Color(0xFF14532D) else RedDark,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        color = if (incidencia.resuelta) EcoForestGreen else EcoRed,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                     )
                 }
             }
 
-            Text(incidencia.loteNombre ?: "Alimento Reportado", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = BlueDark)
-            Text("Detalles: ${incidencia.detalles}", fontSize = 12.sp, color = Color.DarkGray)
+            Text(incidencia.loteNombre ?: "Alimento Reportado", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = EcoTextPrimary)
+            Text("Detalles: ${incidencia.detalles}", fontSize = 12.sp, color = EcoTextMuted)
 
             if (incidencia.resolucion != null) {
-                Text("Resolución: ${incidencia.resolucion}", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF16A34A))
+                Text("Resolución: ${incidencia.resolucion}", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = EcoForestGreen)
             }
 
             if (!incidencia.resuelta) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Button(
                         onClick = { onResolver(true, "Lote inspeccionado y reactivado apto para consumo") },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A)),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.weight(1f)
+                        colors = ButtonDefaults.buttonColors(containerColor = EcoForestGreen),
+                        shape = RoundedCornerShape(50),
+                        modifier = Modifier.weight(1.2f).height(42.dp)
                     ) {
-                        Text("Reactivar Lote", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        Text("Reactivar Lote", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     }
-                    OutlinedButton(
+                    Button(
                         onClick = { onResolver(false, "Lote descartado definitivamente por inocuidad") },
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.weight(1f)
+                        colors = ButtonDefaults.buttonColors(containerColor = EcoSageGreen, contentColor = EcoTextPrimary),
+                        shape = RoundedCornerShape(50),
+                        modifier = Modifier.weight(1f).height(42.dp)
                     ) {
-                        Text("Descartar Lote", fontSize = 10.sp, color = RedDark)
+                        Text("Descartar Lote", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }

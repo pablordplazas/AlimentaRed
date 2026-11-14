@@ -1,8 +1,10 @@
 package com.example.alimentared.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -22,12 +24,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.alimentared.data.model.StrikeResponse
 import com.example.alimentared.data.model.UsuarioResponse
-import com.example.alimentared.ui.components.AlimentaRedBackground
-import com.example.alimentared.ui.components.BackgroundPatternType
-import com.example.alimentared.ui.theme.BackgroundLight
-import com.example.alimentared.ui.theme.BlueDark
-import com.example.alimentared.ui.theme.RedDark
-import com.example.alimentared.ui.theme.RedPrimary
+import com.example.alimentared.ui.components.AlimentaRedTopBar
+import com.example.alimentared.ui.theme.*
 import com.example.alimentared.util.removerCodigosRegla
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -42,49 +40,47 @@ fun DetalleStrikesScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            AlimentaRedTopBar(
                 title = {
                     Text(
                         "Detalle de Sanciones",
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
+                        fontSize = 15.sp
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Volver",
-                            tint = Color.White
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = BlueDark)
+                }
             )
         },
-        containerColor = Color.Transparent
+        containerColor = EcoBackground
     ) { padding ->
-        AlimentaRedBackground(
-            modifier = Modifier.padding(padding),
-            patternType = BackgroundPatternType.PERFIL
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // 1. TARJETA RESUMEN DE LA ORGANIZACIÓN
+            // 1. TARJETA RESUMEN DE LA ORGANIZACIÓN ESTILO ECO ABASTO
             Card(
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = EcoSurface),
+                border = BorderStroke(1.dp, EcoBorder),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.padding(18.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Row(
@@ -95,35 +91,34 @@ fun DetalleStrikesScreen(
                         Column {
                             Text(
                                 usuario?.organizacion?.nombre ?: usuario?.nombre ?: "Mi Organización",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp,
-                                color = BlueDark
+                                fontWeight = FontWeight.Black,
+                                fontSize = 17.sp,
+                                color = EcoTextPrimary
                             )
                             if (usuario?.organizacion?.nit != null) {
                                 Text(
                                     "NIT: ${usuario.organizacion.nit}",
-                                    fontSize = 11.sp,
-                                    color = Color.Gray
+                                    fontSize = 12.sp,
+                                    color = EcoTextMuted
                                 )
                             }
                         }
                         Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = if (estaSuspendida) Color(0xFFFEE2E2) else if (strikesVigentes > 0) Color(0xFFFEF3C7) else Color(0xFFDCFCE7)
+                            shape = RoundedCornerShape(50),
+                            color = if (estaSuspendida) EcoRedLight else if (strikesVigentes > 0) Color(0xFFFEF3C7) else EcoMintGreen
                         ) {
                             Text(
                                 if (estaSuspendida) "SUSPENDIDA" else if (strikesVigentes > 0) "ADVERTENCIA" else "AL DÍA",
-                                color = if (estaSuspendida) RedPrimary else if (strikesVigentes > 0) Color(0xFFB45309) else Color(0xFF15803D),
+                                color = if (estaSuspendida) EcoRed else if (strikesVigentes > 0) Color(0xFFB45309) else EcoForestGreen,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                fontSize = 10.sp,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                             )
                         }
                     }
 
-                    HorizontalDivider(color = Color(0xFFF1F5F9))
+                    HorizontalDivider(color = EcoBorder)
 
-                    // Indicador de strikes
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -132,14 +127,14 @@ fun DetalleStrikesScreen(
                         Text(
                             "Strikes Vigentes Acumulados:",
                             fontSize = 13.sp,
-                            color = Color.DarkGray,
+                            color = EcoTextPrimary,
                             fontWeight = FontWeight.Medium
                         )
                         Text(
                             "$strikesVigentes / 3",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Black,
-                            color = if (estaSuspendida) RedPrimary else if (strikesVigentes > 0) Color(0xFFF59E0B) else Color(0xFF16A34A)
+                            color = if (estaSuspendida) EcoRed else if (strikesVigentes > 0) EcoAmber else EcoForestGreen
                         )
                     }
 
@@ -148,8 +143,8 @@ fun DetalleStrikesScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(8.dp),
-                        color = if (estaSuspendida) RedPrimary else Color(0xFFF59E0B),
-                        trackColor = Color(0xFFE2E8F0)
+                        color = if (estaSuspendida) EcoRed else EcoAmber,
+                        trackColor = EcoBorder
                     )
                 }
             }
@@ -157,61 +152,59 @@ fun DetalleStrikesScreen(
             // 2. AVISO DE SUSPENSIÓN (SI TIENE 3 O MÁS STRIKES)
             if (estaSuspendida) {
                 Card(
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFEE2E2)),
-                    border = CardDefaults.outlinedCardBorder().copy(
-                        brush = androidx.compose.ui.graphics.SolidColor(RedPrimary)
-                    ),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = EcoRedLight),
+                    border = BorderStroke(1.dp, EcoRed),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier = Modifier.padding(18.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Block, contentDescription = null, tint = RedPrimary)
+                            Icon(Icons.Default.Block, contentDescription = null, tint = EcoRed)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 "⛔ CUENTA SUSPENDIDA",
                                 fontWeight = FontWeight.Black,
-                                fontSize = 14.sp,
-                                color = RedDark
+                                fontSize = 15.sp,
+                                color = EcoRed
                             )
                         }
                         Text(
                             "Tu organización ha acumulado 3 strikes vigentes por incumplimiento de horarios o inasistencia. No puedes publicar ni solicitar alimentos en la plataforma.",
                             fontSize = 12.sp,
-                            color = RedDark,
+                            color = EcoRed,
                             lineHeight = 17.sp
                         )
                         Surface(
-                            shape = RoundedCornerShape(8.dp),
+                            shape = RoundedCornerShape(14.dp),
                             color = Color.White,
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(
-                                modifier = Modifier.padding(10.dp),
+                                modifier = Modifier.padding(12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(Icons.Default.Email, contentDescription = null, tint = RedPrimary, modifier = Modifier.size(20.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
+                                Icon(Icons.Default.Email, contentDescription = null, tint = EcoOliveGreen, modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(10.dp))
                                 Column {
                                     Text(
                                         "Envía un correo para apelar a:",
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.SemiBold,
-                                        color = BlueDark
+                                        color = EcoTextPrimary
                                     )
                                     Text(
                                         "coordinador@alimentared.com",
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = RedPrimary
+                                        color = EcoForestGreen
                                     )
                                     Text(
                                         "Adjunta la justificación y evidencias de tu caso para que la coordinación evalúe la reactivación.",
                                         fontSize = 10.sp,
-                                        color = Color.Gray
+                                        color = EcoTextMuted
                                     )
                                 }
                             }
@@ -223,36 +216,42 @@ fun DetalleStrikesScreen(
             // 3. LISTADO DETALLADO DE STRIKES O MENSAJE VACÍO
             if (strikes.isEmpty()) {
                 Card(
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF0FDF4)),
-                    border = CardDefaults.outlinedCardBorder().copy(
-                        brush = androidx.compose.ui.graphics.SolidColor(Color(0xFF86EFAC))
-                    ),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = EcoMintLight),
+                    border = BorderStroke(1.dp, EcoMintGreen),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(24.dp),
+                            .padding(26.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Icon(
-                            Icons.Default.CheckCircle,
-                            contentDescription = null,
-                            tint = Color(0xFF16A34A),
-                            modifier = Modifier.size(48.dp)
-                        )
+                        Surface(
+                            shape = CircleShape,
+                            color = EcoMintGreen,
+                            modifier = Modifier.size(54.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    tint = EcoForestGreen,
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
+                        }
                         Text(
                             "¡Sin strikes acumulados!",
                             fontWeight = FontWeight.Black,
-                            fontSize = 16.sp,
-                            color = Color(0xFF14532D)
+                            fontSize = 17.sp,
+                            color = EcoForestGreen
                         )
                         Text(
-                            "Tu organización no cuenta con ninguna sanción ni strike registrado en AlimentaRed. ¡Felicitaciones por mantener una operación puntual y responsable!",
+                            "Tu organización no cuenta con ninguna sanción ni strike registrado en Eco Abasto. ¡Felicitaciones por mantener una operación puntual y responsable!",
                             fontSize = 12.sp,
-                            color = Color(0xFF166534),
+                            color = EcoTextPrimary,
                             lineHeight = 18.sp,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
                         )
@@ -262,19 +261,20 @@ fun DetalleStrikesScreen(
                 Text(
                     "Historial de Infracciones Registradas (${strikes.size})",
                     fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    color = BlueDark
+                    fontSize = 15.sp,
+                    color = EcoTextPrimary
                 )
 
                 strikes.forEach { strike ->
                     Card(
-                        shape = RoundedCornerShape(10.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        shape = RoundedCornerShape(18.dp),
+                        colors = CardDefaults.cardColors(containerColor = EcoSurface),
+                        border = BorderStroke(1.dp, EcoBorder),
                         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(
-                            modifier = Modifier.padding(14.dp),
+                            modifier = Modifier.padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Row(
@@ -286,7 +286,7 @@ fun DetalleStrikesScreen(
                                     Icon(
                                         Icons.Default.Gavel,
                                         contentDescription = null,
-                                        tint = if (strike.vigente) RedPrimary else Color.Gray,
+                                        tint = if (strike.vigente) EcoRed else EcoTextMuted,
                                         modifier = Modifier.size(18.dp)
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
@@ -294,19 +294,19 @@ fun DetalleStrikesScreen(
                                         strike.nombreStrike.removerCodigosRegla(),
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 13.sp,
-                                        color = BlueDark
+                                        color = EcoTextPrimary
                                     )
                                 }
                                 Surface(
-                                    shape = RoundedCornerShape(4.dp),
-                                    color = if (strike.vigente) Color(0xFFFEE2E2) else Color(0xFFDCFCE7)
+                                    shape = RoundedCornerShape(50),
+                                    color = if (strike.vigente) EcoRedLight else EcoMintGreen
                                 ) {
                                     Text(
                                         if (strike.vigente) "VIGENTE" else "ANULADO",
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = if (strike.vigente) RedPrimary else Color(0xFF15803D),
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        color = if (strike.vigente) EcoRed else EcoForestGreen,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                                     )
                                 }
                             }
@@ -315,24 +315,24 @@ fun DetalleStrikesScreen(
                                 Text(
                                     "Fecha de registro: ${strike.fechaRegistro}",
                                     fontSize = 11.sp,
-                                    color = Color.Gray
+                                    color = EcoTextMuted
                                 )
                             }
 
                             Text(
                                 strike.detalles?.removerCodigosRegla() ?: "Infracción logística o incumplimiento de horario.",
                                 fontSize = 12.sp,
-                                color = Color.DarkGray
+                                color = EcoTextPrimary.copy(alpha = 0.85f)
                             )
 
-                            HorizontalDivider(color = Color(0xFFF1F5F9))
+                            HorizontalDivider(color = EcoBorder)
 
                             if (strike.vigente) {
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .background(Color(0xFFFFFBEB), RoundedCornerShape(6.dp))
-                                        .padding(8.dp),
+                                        .background(Color(0xFFFFFBEB), RoundedCornerShape(10.dp))
+                                        .padding(10.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
@@ -353,7 +353,7 @@ fun DetalleStrikesScreen(
                                 Text(
                                     "✓ Apelación evaluada: ${strike.justificacionApelacion?.removerCodigosRegla() ?: "Sanción anulada por la coordinación"}",
                                     fontSize = 11.sp,
-                                    color = Color(0xFF16A34A),
+                                    color = EcoForestGreen,
                                     fontWeight = FontWeight.SemiBold
                                 )
                             }
@@ -362,6 +362,5 @@ fun DetalleStrikesScreen(
                 }
             }
         }
-    }
     }
 }

@@ -1,6 +1,5 @@
 package com.example.alimentared.ui.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -13,19 +12,27 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 
 private val DarkColorScheme = darkColorScheme(
-    primary = RedPrimary,
-    secondary = BlueCard,
-    tertiary = RedDark,
-    background = BlueDark,
-    surface = BlueDark
+    primary = EcoForestGreen,
+    secondary = EcoSageGreen,
+    tertiary = EcoMintGreen,
+    background = Color(0xFF141F16),
+    surface = Color(0xFF1B2B1E),
+    onPrimary = Color.White,
+    onSecondary = EcoTextPrimary,
+    onBackground = Color.White,
+    onSurface = Color.White
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = RedPrimary,
-    secondary = BlueCard,
-    tertiary = RedDark,
-    background = BackgroundLight,
-    surface = Color.White
+    primary = EcoForestGreen,
+    secondary = EcoSageGreen,
+    tertiary = EcoMintGreen,
+    background = EcoBackground,
+    surface = EcoSurface,
+    onPrimary = Color.White,
+    onSecondary = EcoTextPrimary,
+    onBackground = EcoTextPrimary,
+    onSurface = EcoTextPrimary
 )
 
 @Composable

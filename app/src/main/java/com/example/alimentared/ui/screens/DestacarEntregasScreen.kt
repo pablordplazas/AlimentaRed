@@ -1,6 +1,7 @@
 package com.example.alimentared.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -19,8 +20,7 @@ import androidx.compose.ui.unit.sp
 import com.example.alimentared.data.model.AsignacionResponse
 import com.example.alimentared.data.noticias.NoticiasManager
 import com.example.alimentared.data.remote.RetrofitClient
-import com.example.alimentared.ui.components.AlimentaRedBackground
-import com.example.alimentared.ui.components.BackgroundPatternType
+import com.example.alimentared.ui.components.AlimentaRedTopBar
 import com.example.alimentared.ui.theme.*
 import kotlinx.coroutines.launch
 
@@ -38,7 +38,6 @@ fun DestacarEntregasScreen(
     var searchQuery by remember { mutableStateOf("") }
     var mensajeFeedback by remember { mutableStateOf<String?>(null) }
 
-    // Entregas de ejemplo en caso de que la base de datos aún no tenga entregas en estado COMPLETADA
     val entregasEjemplo = remember {
         listOf(
             AsignacionResponse(
@@ -81,7 +80,7 @@ fun DestacarEntregasScreen(
                 estado = "COMPLETADA",
                 fechaCierre = "Hace 2 días",
                 instruccionesRecogida = "Cadena de frío verificada.",
-                contactoDonante = "3205556677"
+                contactoDonante = "3201122334"
             )
         )
     }
@@ -90,13 +89,10 @@ fun DestacarEntregasScreen(
         coroutineScope.launch {
             isLoading = true
             try {
-                val res = RetrofitClient.instance.getAsignaciones(page = 0, size = 50)
+                val res = RetrofitClient.instance.getAsignaciones()
                 if (res.isSuccessful && res.body() != null) {
-                    val remotas = res.body()!!.contenido.filter {
-                        it.estado.equals("COMPLETADA", ignoreCase = true) || it.cantidadRetirada > 0
-                    }
-                    // Combinar con ejemplos si hay pocas remotas para permitir pruebas completas
-                    val combinadas = (remotas + entregasEjemplo).distinctBy { it.id }
+                    val realesCompletadas = res.body()!!.contenido.filter { it.estado == "COMPLETADA" }
+                    val combinadas = (realesCompletadas + entregasEjemplo).distinctBy { it.id }
                     asignacionesCompletadas = combinadas
                 } else {
                     asignacionesCompletadas = entregasEjemplo
@@ -128,224 +124,214 @@ fun DestacarEntregasScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            AlimentaRedTopBar(
                 title = {
                     Column {
-                        Text("⭐ Destacar Entregas de Comida", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
-                        Text("Publicar rescates exitosos en Noticias de Inicio", fontSize = 11.sp, color = Color(0xFFCBD5E1))
+                        Text("⭐ Destacar Entregas de Comida", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color.White)
+                        Text("Publicar rescates exitosos en Noticias de Inicio", fontSize = 10.sp, color = Color.White.copy(alpha = 0.8f))
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White)
+                    IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White, modifier = Modifier.size(20.dp))
                     }
                 },
                 actions = {
-                    IconButton(onClick = { cargarEntregas() }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Actualizar", tint = Color.White)
+                    IconButton(onClick = { cargarEntregas() }, modifier = Modifier.size(36.dp)) {
+                        Icon(Icons.Default.Refresh, contentDescription = "Actualizar", tint = Color.White, modifier = Modifier.size(20.dp))
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = BlueDark)
+                }
             )
-        }
+        },
+        containerColor = EcoBackground
     ) { padding ->
-        AlimentaRedBackground(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding),
-            patternType = BackgroundPatternType.GENERAL
+                .padding(padding)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
+            // Banner Informativo Estilo Eco Abasto
+            Card(
+                colors = CardDefaults.cardColors(containerColor = EcoAmber.copy(alpha = 0.12f)),
+                shape = RoundedCornerShape(20.dp),
+                border = BorderStroke(1.dp, EcoAmber),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                // Banner Informativo
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFBEB)),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, Color(0xFFFDE68A)),
+                Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Star, contentDescription = null, tint = EcoAmber, modifier = Modifier.size(24.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text(
+                            "Difusión de Impacto Institucional",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                            color = EcoAmberDark
+                        )
+                        Text(
+                            "Selecciona una entrega completada para destacarla con la estrella ⭐. Se publicará inmediatamente en la sección de Noticias del Inicio para todos los usuarios.",
+                            fontSize = 11.sp,
+                            color = EcoTextPrimary,
+                            lineHeight = 15.sp
+                        )
+                    }
+                }
+            }
+
+            if (mensajeFeedback != null) {
+                Surface(
+                    color = EcoMintGreen,
+                    shape = RoundedCornerShape(14.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFD97706), modifier = Modifier.size(24.dp))
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Column {
-                            Text(
-                                "Difusión de Impacto Institucional",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 13.sp,
-                                color = Color(0xFF92400E)
-                            )
-                            Text(
-                                "Selecciona una entrega completada para destacarla con la estrella ⭐. Se publicará inmediatamente en la sección de Noticias del Inicio para todos los usuarios.",
-                                fontSize = 11.sp,
-                                color = Color(0xFF78350F),
-                                lineHeight = 15.sp
-                            )
-                        }
+                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = EcoForestGreen, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(mensajeFeedback!!, color = EcoForestGreen, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
+            }
 
-                if (mensajeFeedback != null) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Surface(
-                        color = Color(0xFFDCFCE7),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(modifier = Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF16A34A), modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(mensajeFeedback!!, color = Color(0xFF14532D), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            // Buscador Píldora
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = { Text("Buscar entrega por donante, fundación o alimento...", fontSize = 12.sp, color = EcoTextMuted) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = EcoForestGreen) },
+                trailingIcon = {
+                    if (searchQuery.isNotBlank()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(Icons.Default.Close, contentDescription = null, tint = EcoTextMuted)
                         }
                     }
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Buscador
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    placeholder = { Text("Buscar entrega por donante, fundación o alimento...", fontSize = 12.sp) },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray) },
-                    trailingIcon = {
-                        if (searchQuery.isNotBlank()) {
-                            IconButton(onClick = { searchQuery = "" }) {
-                                Icon(Icons.Default.Close, contentDescription = null, tint = Color.Gray)
-                            }
-                        }
-                    },
-                    singleLine = true,
-                    shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFFD97706),
-                        unfocusedBorderColor = Color(0xFFCBD5E1),
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White
-                    )
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(50),
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = EcoForestGreen,
+                    unfocusedBorderColor = EcoBorder,
+                    focusedContainerColor = EcoSurface,
+                    unfocusedContainerColor = EcoSurface
                 )
+            )
 
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Lista de entregas completadas
-                if (isLoading) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = Color(0xFFD97706))
+            // Lista de entregas completadas
+            if (isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = EcoForestGreen)
+                }
+            } else if (listaFiltrada.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.TaskAlt, contentDescription = null, tint = EcoTextMuted, modifier = Modifier.size(48.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("No se encontraron entregas completadas", color = EcoTextMuted, fontSize = 13.sp)
                     }
-                } else if (listaFiltrada.isEmpty()) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(Icons.Default.TaskAlt, contentDescription = null, tint = Color.LightGray, modifier = Modifier.size(48.dp))
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text("No se encontraron entregas completadas", color = Color.Gray, fontSize = 13.sp)
-                        }
-                    }
-                } else {
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        items(listaFiltrada) { entrega ->
-                            val esDestacada = noticiasManager.esEntregaDestacada(entrega.id)
+                }
+            } else {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    items(listaFiltrada) { entrega ->
+                        val esDestacada = noticiasManager.esEntregaDestacada(entrega.id)
 
-                            Card(
-                                shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White),
-                                border = if (esDestacada) BorderStroke(1.5.dp, Color(0xFFF59E0B)) else null,
-                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Column(modifier = Modifier.padding(14.dp)) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            "ASIGNACIÓN #${entrega.id}",
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = RedPrimary
-                                        )
+                        Card(
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(containerColor = EcoSurface),
+                            border = BorderStroke(1.dp, if (esDestacada) EcoAmber else EcoBorder),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        "ASIGNACIÓN #${entrega.id}",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = EcoOliveGreen
+                                    )
 
-                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                            if (esDestacada) {
-                                                Surface(
-                                                    color = Color(0xFFFEF3C7),
-                                                    shape = RoundedCornerShape(6.dp)
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        if (esDestacada) {
+                                            Surface(
+                                                color = EcoAmber,
+                                                shape = RoundedCornerShape(50)
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
                                                 ) {
-                                                    Row(
-                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                                        verticalAlignment = Alignment.CenterVertically
-                                                    ) {
-                                                        Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFD97706), modifier = Modifier.size(12.dp))
-                                                        Spacer(modifier = Modifier.width(3.dp))
-                                                        Text("EN INICIO", color = Color(0xFF92400E), fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                                                    }
+                                                    Icon(Icons.Default.Star, contentDescription = null, tint = Color.White, modifier = Modifier.size(12.dp))
+                                                    Spacer(modifier = Modifier.width(3.dp))
+                                                    Text("EN INICIO", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
                                                 }
                                             }
+                                        }
 
-                                            Surface(
-                                                color = Color(0xFFDCFCE7),
-                                                shape = RoundedCornerShape(6.dp)
-                                            ) {
-                                                Text(
-                                                    "COMPLETADA",
-                                                    color = Color(0xFF14532D),
-                                                    fontSize = 9.sp,
-                                                    fontWeight = FontWeight.Bold,
-                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                                )
-                                            }
+                                        Surface(
+                                            color = EcoMintGreen,
+                                            shape = RoundedCornerShape(50)
+                                        ) {
+                                            Text(
+                                                "COMPLETADA",
+                                                color = EcoForestGreen,
+                                                fontSize = 9.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                            )
                                         }
                                     }
+                                }
 
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(entrega.loteNombre ?: "Lote de Alimentos", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = BlueDark)
-                                    Text("Donante: ${entrega.donanteNombre ?: "Comercio"}", fontSize = 12.sp, color = Color.Gray)
-                                    Text("Receptora: ${entrega.receptoraNombre ?: "Fundación"}", fontSize = 12.sp, color = Color.Gray)
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(entrega.loteNombre ?: "Lote de Alimentos", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = EcoTextPrimary)
+                                Text("Donante: ${entrega.donanteNombre ?: "Comercio"}", fontSize = 12.sp, color = EcoTextMuted)
+                                Text("Receptora: ${entrega.receptoraNombre ?: "Fundación"}", fontSize = 12.sp, color = EcoTextMuted)
 
-                                    val cantFinal = if (entrega.cantidadRetirada > 0) entrega.cantidadRetirada else entrega.cantidadAsignada
-                                    Text("Cantidad Entregada: $cantFinal Kg", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = BlueDark)
+                                val cantFinal = if (entrega.cantidadRetirada > 0) entrega.cantidadRetirada else entrega.cantidadAsignada
+                                Text("Cantidad Entregada: $cantFinal Kg", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = EcoForestGreen)
 
-                                    if (entrega.fechaCierre != null) {
-                                        Text("Fecha: ${entrega.fechaCierre}", fontSize = 11.sp, color = TextMuted)
-                                    }
+                                if (entrega.fechaCierre != null) {
+                                    Text("Fecha: ${entrega.fechaCierre}", fontSize = 11.sp, color = EcoTextMuted)
+                                }
 
-                                    Spacer(modifier = Modifier.height(10.dp))
-                                    HorizontalDivider(color = Color(0xFFF1F5F9))
-                                    Spacer(modifier = Modifier.height(8.dp))
+                                Spacer(modifier = Modifier.height(10.dp))
+                                HorizontalDivider(color = EcoBorder)
+                                Spacer(modifier = Modifier.height(10.dp))
 
-                                    // Botón con la estrella para destacar
-                                    Button(
-                                        onClick = {
-                                            val agregado = noticiasManager.toggleDestacarEntrega(entrega)
-                                            mensajeFeedback = if (agregado) {
-                                                "¡Entrega #${entrega.id} destacada exitosamente en la pantalla de inicio!"
-                                            } else {
-                                                "La entrega #${entrega.id} fue retirada de las noticias de inicio."
-                                            }
-                                        },
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = if (esDestacada) Color(0xFFD97706) else BlueDark
-                                        ),
-                                        shape = RoundedCornerShape(8.dp),
-                                        modifier = Modifier.fillMaxWidth().height(42.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = if (esDestacada) Icons.Default.Star else Icons.Default.StarOutline,
-                                            contentDescription = null,
-                                            tint = if (esDestacada) Color.White else Color(0xFFF59E0B),
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text(
-                                            if (esDestacada) "⭐ Destacada en Noticias de Inicio" else "⭐ Destacar en Noticias de Inicio",
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 12.sp,
-                                            color = Color.White
-                                        )
-                                    }
+                                // Botón píldora con la estrella para destacar
+                                Button(
+                                    onClick = {
+                                        val agregado = noticiasManager.toggleDestacarEntrega(entrega)
+                                        mensajeFeedback = if (agregado) {
+                                            "¡Entrega #${entrega.id} destacada exitosamente en la pantalla de inicio!"
+                                        } else {
+                                            "La entrega #${entrega.id} fue retirada de las noticias de inicio."
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (esDestacada) EcoAmber else EcoForestGreen
+                                    ),
+                                    shape = RoundedCornerShape(50),
+                                    modifier = Modifier.fillMaxWidth().height(44.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = if (esDestacada) Icons.Default.Star else Icons.Default.StarOutline,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        if (esDestacada) "⭐ Destacada en Noticias de Inicio" else "⭐ Destacar en Noticias de Inicio",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.sp,
+                                        color = Color.White
+                                    )
                                 }
                             }
                         }
