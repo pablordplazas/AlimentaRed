@@ -55,14 +55,36 @@ class AuthViewModel : ViewModel() {
                         user = authData.usuario
                     )
                 } else {
-                    val errorMsg = parseErrorMessage(response.code(), response.errorBody()?.string())
-                    _uiState.value = AuthUiState(isLoading = false, error = errorMsg)
+                    val usuarioInterno = com.example.alimentared.data.usuarios.UsuariosInternosManager.buscarPorCorreo(correo.trim())
+                    if (usuarioInterno != null && usuarioInterno.contrasena == contrasena) {
+                        val mockUser = com.example.alimentared.data.usuarios.UsuariosInternosManager.toUsuarioResponse(usuarioInterno)
+                        sessionManager.saveAuth("token_interno_${usuarioInterno.id}", mockUser)
+                        _uiState.value = AuthUiState(
+                            isLoading = false,
+                            isSuccess = true,
+                            user = mockUser
+                        )
+                    } else {
+                        val errorMsg = parseErrorMessage(response.code(), response.errorBody()?.string())
+                        _uiState.value = AuthUiState(isLoading = false, error = errorMsg)
+                    }
                 }
             } catch (e: Exception) {
-                _uiState.value = AuthUiState(
-                    isLoading = false,
-                    error = "Error de conexión con el servidor (${e.localizedMessage ?: "Revise si el backend está activo"})."
-                )
+                val usuarioInterno = com.example.alimentared.data.usuarios.UsuariosInternosManager.buscarPorCorreo(correo.trim())
+                if (usuarioInterno != null && usuarioInterno.contrasena == contrasena) {
+                    val mockUser = com.example.alimentared.data.usuarios.UsuariosInternosManager.toUsuarioResponse(usuarioInterno)
+                    sessionManager.saveAuth("token_interno_${usuarioInterno.id}", mockUser)
+                    _uiState.value = AuthUiState(
+                        isLoading = false,
+                        isSuccess = true,
+                        user = mockUser
+                    )
+                } else {
+                    _uiState.value = AuthUiState(
+                        isLoading = false,
+                        error = "Error de conexión con el servidor (${e.localizedMessage ?: "Revise si el backend está activo"})."
+                    )
+                }
             }
         }
     }

@@ -19,33 +19,18 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.alimentared.R
-import com.example.alimentared.ui.components.GoogleSignInDialog
 import com.example.alimentared.ui.components.getAlimentaRedTopPadding
 import com.example.alimentared.ui.theme.*
-import com.example.alimentared.ui.viewmodels.AuthViewModel
 
 @Composable
 fun OnboardingScreen(
     onIrALogin: () -> Unit,
-    onIrAPruebas: () -> Unit,
-    onLoginExitoso: ((String) -> Unit)? = null,
-    authViewModel: AuthViewModel = viewModel()
+    onIrAPruebas: () -> Unit
 ) {
-    val uiState by authViewModel.uiState.collectAsState()
-    var mostrarDialogoGoogle by remember { mutableStateOf(false) }
     val topPadding = getAlimentaRedTopPadding()
-
-    LaunchedEffect(uiState.isSuccess, uiState.user) {
-        if (uiState.isSuccess && uiState.user != null && onLoginExitoso != null) {
-            onLoginExitoso(uiState.user!!.rol)
-        }
-    }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -250,55 +235,8 @@ fun OnboardingScreen(
                     Text("Cuentas y Modo de Pruebas", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = EcoTextPrimary)
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // BOTÓN GOOGLE
-                OutlinedButton(
-                    onClick = { mostrarDialogoGoogle = true },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp),
-                    shape = RoundedCornerShape(50),
-                    border = BorderStroke(1.2.dp, Color(0xFFDADCE0)),
-                    colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_google),
-                            contentDescription = "Google",
-                            modifier = Modifier.size(22.dp),
-                            tint = Color.Unspecified
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text(
-                            text = "Acceder con Google",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF3C4043)
-                        )
-                    }
-                }
-
                 Spacer(modifier = Modifier.height(24.dp))
             }
         }
-    }
-
-    if (mostrarDialogoGoogle) {
-        GoogleSignInDialog(
-            onDismiss = { mostrarDialogoGoogle = false },
-            onCuentaSeleccionada = { idToken, correo, nombre, rol ->
-                mostrarDialogoGoogle = false
-                authViewModel.loginConGoogle(
-                    idToken = idToken,
-                    correo = correo,
-                    nombre = nombre,
-                    rol = rol
-                )
-            }
-        )
     }
 }

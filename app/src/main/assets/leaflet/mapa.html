@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>AlimentaRed Mapa</title>
+    <link rel="stylesheet" href="leaflet.css" />
+    <script src="leaflet.js"></script>
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+            box-sizing: border-box;
+        }
+        html, body {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #F6F5EE;
+        }
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #EBF1EA;
+            background-image: 
+                linear-gradient(rgba(168, 198, 159, 0.35) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(168, 198, 159, 0.35) 1px, transparent 1px),
+                linear-gradient(rgba(75, 99, 78, 0.15) 2px, transparent 2px),
+                linear-gradient(90deg, rgba(75, 99, 78, 0.15) 2px, transparent 2px);
+            background-size: 24px 24px, 24px 24px, 120px 120px, 120px 120px;
+        }
+        .eco-pin-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .eco-pin {
+            background: #1F382B;
+            border: 3px solid #FFFFFF;
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            width: 38px;
+            height: 38px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease;
+        }
+        .eco-pin:hover {
+            transform: rotate(-45deg) scale(1.1);
+        }
+        .eco-pin-inner {
+            transform: rotate(45deg);
+            color: #FFFFFF;
+            font-size: 16px;
+            font-weight: 900;
+        }
+        .eco-pin-pulse {
+            width: 14px;
+            height: 6px;
+            background: rgba(31, 56, 43, 0.4);
+            border-radius: 50%;
+            margin-top: -3px;
+        }
+        .leaflet-popup-content-wrapper {
+            border-radius: 16px;
+            box-shadow: 0 6px 18px rgba(31,56,43,0.22);
+            border: 1px solid #E2DFD2;
+            padding: 4px;
+        }
+        .leaflet-popup-content {
+            margin: 10px 12px;
+            line-height: 1.3;
+        }
+        .popup-title {
+            color: #1F382B;
+            font-weight: 800;
+            font-size: 13px;
+            margin-bottom: 3px;
+        }
+        .popup-sub {
+            color: #4B634E;
+            font-size: 11px;
+            margin-bottom: 4px;
+        }
+        .coords-badge {
+            display: inline-block;
+            background: #E6F0EB;
+            color: #1F382B;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 700;
+            font-family: monospace;
+            border: 1px solid #A8C69F;
+        }
+        .custom-zoom-controls {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .zoom-btn {
+            width: 36px;
+            height: 36px;
+            background: #FFFFFF;
+            border: 1px solid #E2DFD2;
+            border-radius: 50%;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+            font-size: 18px;
+            font-weight: bold;
+            color: #1F382B;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+        }
+        .zoom-btn:active {
+            background: #E6F0EB;
+            transform: scale(0.95);
+        }
+        .crosshair-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            pointer-events: none;
+            z-index: 500;
+            opacity: 0.25;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <div class="custom-zoom-controls">
+        <div class="zoom-btn" onclick="zoomIn()">+</div>
+        <div class="zoom-btn" onclick="zoomOut()">−</div>
+    </div>
+
+    <script>
+        var map = null;
+        var marker = null;
+        var esModoSeleccion = false;
+        var tituloActual = "Punto Logístico";
+        var subtituloActual = "AlimentaRed";
+
+        function initMap(lat, lng, zoom, modoSeleccion, titulo, subtitulo) {
+            esModoSeleccion = modoSeleccion;
+            tituloActual = titulo || "Punto Logístico";
+            subtituloActual = subtitulo || "";
+
+            var latNum = parseFloat(lat) || 4.6145;
+            var lngNum = parseFloat(lng) || -74.0886;
+            var zoomNum = parseInt(zoom) || 16;
+
+            if (map) {
+                map.remove();
+            }
+
+            map = L.map('map', {
+                zoomControl: false,
+                attributionControl: false,
+                center: [latNum, lngNum],
+                zoom: zoomNum
+            });
+
+            // Capa 1: CartoDB Voyager (CDN rápido y fiable para móviles)
+            var cartoVoyager = L.tileLayer('https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                maxZoom: 19,
+                subdomains: 'abcd'
+            }).addTo(map);
+
+            // Icono personalizado Eco Abasto
+            var ecoIcon = L.divIcon({
+                className: 'custom-eco-icon',
+                html: '<div class="eco-pin-container"><div class="eco-pin"><div class="eco-pin-inner">🌱</div></div><div class="eco-pin-pulse"></div></div>',
+                iconSize: [38, 44],
+                iconAnchor: [19, 44],
+                popupAnchor: [0, -42]
+            });
+
+            marker = L.marker([latNum, lngNum], {
+                icon: ecoIcon,
+                draggable: esModoSeleccion,
+                autoPan: true
+            }).addTo(map);
+
+            actualizarPopup(latNum, lngNum, true);
+
+            if (esModoSeleccion) {
+                marker.on('dragend', function(e) {
+                    var pos = marker.getLatLng();
+                    actualizarPopup(pos.lat, pos.lng, true);
+                    notificarNativo(pos.lat, pos.lng);
+                });
+
+                map.on('click', function(e) {
+                    marker.setLatLng(e.latlng);
+                    actualizarPopup(e.latlng.lat, e.latlng.lng, true);
+                    notificarNativo(e.latlng.lat, e.latlng.lng);
+                });
+            } else {
+                marker.openPopup();
+            }
+
+            // Forzar actualización de tamaño tras render
+            setTimeout(function() { map.invalidateSize(); }, 150);
+            setTimeout(function() { map.invalidateSize(); }, 500);
+            setTimeout(function() { map.invalidateSize(); }, 1200);
+
+            if (window.AndroidMapBridge && window.AndroidMapBridge.onMapReady) {
+                window.AndroidMapBridge.onMapReady();
+            }
+        }
+
+        function actualizarPopup(lat, lng, abrir) {
+            var latStr = parseFloat(lat).toFixed(5);
+            var lngStr = parseFloat(lng).toFixed(5);
+            var popupContent = 
+                '<div class="popup-title">' + escapeHtml(tituloActual) + '</div>' +
+                (subtituloActual ? '<div class="popup-sub">' + escapeHtml(subtituloActual) + '</div>' : '') +
+                '<div class="coords-badge">' + latStr + ', ' + lngStr + '</div>';
+            
+            marker.bindPopup(popupContent);
+            if (abrir) {
+                marker.openPopup();
+            }
+        }
+
+        function notificarNativo(lat, lng) {
+            if (window.AndroidMapBridge && window.AndroidMapBridge.onLocationMoved) {
+                window.AndroidMapBridge.onLocationMoved(lat, lng);
+            }
+        }
+
+        function updatePosition(newLat, newLng, nuevoTitulo, nuevoSubtitulo) {
+            if (!map || !marker) return;
+            var lat = parseFloat(newLat);
+            var lng = parseFloat(newLng);
+            if (nuevoTitulo) tituloActual = nuevoTitulo;
+            if (nuevoSubtitulo) subtituloActual = nuevoSubtitulo;
+
+            marker.setLatLng([lat, lng]);
+            map.panTo([lat, lng], { animate: true, duration: 0.5 });
+            actualizarPopup(lat, lng, true);
+            map.invalidateSize();
+        }
+
+        function zoomIn() {
+            if (map) map.zoomIn();
+        }
+
+        function zoomOut() {
+            if (map) map.zoomOut();
+        }
+
+        function escapeHtml(text) {
+            var div = document.createElement('div');
+            div.innerText = text;
+            return div.innerHTML;
+        }
+
+        // Inicialización por defecto en caso de carga directa
+        window.addEventListener('DOMContentLoaded', function() {
+            if (!map) {
+                initMap(4.6145, -74.0886, 16, true, "Punto Logístico", "Bogotá");
+            }
+        });
+    </script>
+</body>
+</html>

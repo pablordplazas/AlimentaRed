@@ -28,7 +28,8 @@ enum class PerfilSubVista {
     DETALLE_STRIKES,
     PANEL_APELACIONES,
     PANEL_VERIFICACION,
-    DESTACAR_ENTREGAS
+    DESTACAR_ENTREGAS,
+    CREAR_USUARIO_INTERNO
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -72,6 +73,14 @@ fun PerfilScreen(
         }
         PerfilSubVista.PANEL_VERIFICACION -> {
             PanelVerificacionOrganizacionesScreen(
+                onBack = {
+                    subVista = PerfilSubVista.PERFIL
+                    viewModel.cargarDatos()
+                }
+            )
+        }
+        PerfilSubVista.CREAR_USUARIO_INTERNO -> {
+            CrearUsuarioInternoScreen(
                 onBack = {
                     subVista = PerfilSubVista.PERFIL
                     viewModel.cargarDatos()
@@ -413,6 +422,64 @@ fun PerfilScreen(
                                         Spacer(modifier = Modifier.width(6.dp))
                                         Text("🏢 Verificación de Organizaciones", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
                                     }
+
+                                    Button(
+                                        onClick = { subVista = PerfilSubVista.CREAR_USUARIO_INTERNO },
+                                        colors = ButtonDefaults.buttonColors(containerColor = EcoForestGreen),
+                                        shape = RoundedCornerShape(50),
+                                        modifier = Modifier.fillMaxWidth().height(44.dp)
+                                    ) {
+                                        Icon(Icons.Default.PersonAdd, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.White)
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text("👥 Crear Administrador o Coordinador", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                    }
+                                }
+                            }
+                        }
+
+                        // TARJETA DESTACADA DE GESTIÓN DE PERSONAL PARA ADMINISTRADOR
+                        if (rol.contains("ADMIN")) {
+                            Card(
+                                shape = RoundedCornerShape(18.dp),
+                                colors = CardDefaults.cardColors(containerColor = EcoMintLight),
+                                border = BorderStroke(1.dp, EcoMintGreen),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { subVista = PerfilSubVista.CREAR_USUARIO_INTERNO }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(14.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = EcoForestGreen,
+                                        modifier = Modifier.size(40.dp)
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(Icons.Default.GroupAdd, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            "Alta de Personal Interno",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 13.sp,
+                                            color = EcoForestGreen
+                                        )
+                                        Text(
+                                            "Crea nuevos perfiles y asigna rol de Administrador o Coordinador.",
+                                            fontSize = 11.sp,
+                                            color = EcoTextMuted,
+                                            lineHeight = 15.sp
+                                        )
+                                    }
+                                    Icon(
+                                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                        contentDescription = null,
+                                        tint = EcoForestGreen
+                                    )
                                 }
                             }
                         }

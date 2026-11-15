@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.alimentared.data.model.LoteResponse
 import com.example.alimentared.data.model.TipoAlimentoResponse
 import com.example.alimentared.data.remote.RetrofitClient
+import com.example.alimentared.util.VencimientoUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -99,20 +100,27 @@ class LotesViewModel : ViewModel() {
                     }
                 } else {
                     val catId = _uiState.value.categoriaSeleccionada
-                    val urgentes = if (_uiState.value.soloUrgentes) true else null
                     val query = if (_uiState.value.searchQuery.isBlank()) null else _uiState.value.searchQuery.trim()
 
                     val res = RetrofitClient.instance.getLotes(
                         categoriaId = catId,
-                        rescateUrgente = urgentes,
+                        rescateUrgente = null,
                         query = query,
                         page = 0,
                         size = 50
                     )
                     if (res.isSuccessful && res.body() != null) {
+                        var lista = res.body()!!.contenido
+                        if (_uiState.value.soloUrgentes) {
+                            lista = lista.filter { it.rescateUrgente || VencimientoUtils.esPrioridadAlta(it.fechaCaducidad) }
+                        }
+                        // Priorizar automáticamente en la parte superior los lotes con vencimiento cercano
+                        lista = lista.sortedWith(
+                            compareByDescending<LoteResponse> { it.rescateUrgente || VencimientoUtils.esPrioridadAlta(it.fechaCaducidad) }
+                        )
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
-                            lotes = res.body()!!.contenido
+                            lotes = lista
                         )
                     } else {
                         _uiState.value = _uiState.value.copy(

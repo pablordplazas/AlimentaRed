@@ -28,6 +28,7 @@ import com.example.alimentared.ui.theme.*
 import com.example.alimentared.ui.viewmodels.FiltroEstadoMisLotes
 import com.example.alimentared.ui.viewmodels.LotesViewModel
 import com.example.alimentared.ui.viewmodels.ModoVistaLotes
+import com.example.alimentared.util.VencimientoUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -312,7 +313,7 @@ fun DonacionesTabScreen(
                         selected = uiState.soloUrgentes,
                         onClick = { lotesViewModel.toggleUrgentes() },
                         shape = RoundedCornerShape(50),
-                        label = { Text("⚡ Rescate Urgente", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                        label = { Text("⚡ Prioridad / Por Vencer", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = EcoAmber,
                             selectedLabelColor = Color.White,
@@ -352,6 +353,48 @@ fun DonacionesTabScreen(
             }
 
             Spacer(modifier = Modifier.height(12.dp))
+
+            // ALERTA DE PRIORIDAD AUTOMÁTICA SI HAY LOTES PRÓXIMOS A VENCER
+            val lotesPrioritarios = remember(uiState.lotes) {
+                uiState.lotes.filter { VencimientoUtils.esPrioridadAlta(it.fechaCaducidad, it.rescateUrgente) }
+            }
+
+            if (lotesPrioritarios.isNotEmpty() && !uiState.isLoading) {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = EcoAmber.copy(alpha = 0.12f)),
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(1.dp, EcoAmber),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Surface(shape = CircleShape, color = EcoAmber, modifier = Modifier.size(34.dp)) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(Icons.Default.Bolt, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "¡Alerta de Prioridad Automática!",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                color = EcoAmberDark
+                            )
+                            Text(
+                                "Se detectaron ${lotesPrioritarios.size} ${if (lotesPrioritarios.size == 1) "lote próximo a caducar" else "lotes próximos a caducar"}. ¡Prioriza su solicitud para evitar el desperdicio!",
+                                fontSize = 11.sp,
+                                color = EcoTextPrimary,
+                                lineHeight = 15.sp
+                            )
+                        }
+                    }
+                }
+            }
 
             // LISTA DE LOTES / TARJETAS
             if (uiState.isLoading) {
@@ -495,7 +538,11 @@ fun LoteCardItem(
 
                     Spacer(modifier = Modifier.height(6.dp))
 
-                    // BADGES PÍLDORA (Categoría en menta, Vencimiento en ámbar)
+                    // BADGES PÍLDORA (Categoría en menta, Vencimiento dinámico en ámbar/color)
+                    val infoVencimiento = remember(lote.fechaCaducidad, lote.rescateUrgente) {
+                        VencimientoUtils.calcularInfoVencimiento(lote.fechaCaducidad, lote.rescateUrgente)
+                    }
+
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -513,20 +560,21 @@ fun LoteCardItem(
                             )
                         }
 
-                        if (lote.rescateUrgente) {
-                            Surface(
-                                shape = RoundedCornerShape(50),
-                                color = EcoAmber
-                            ) {
-                                Text(
-                                    "⚡ Rescate Urgente",
-                                    color = Color.White,
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                                )
-                            }
-                        } else if (esBorrador) {
+                        // BADGE DE PRIORIDAD / VENCIMIENTO AUTOMÁTICO
+                        Surface(
+                            shape = RoundedCornerShape(50),
+                            color = infoVencimiento.badgeColor
+                        ) {
+                            Text(
+                                infoVencimiento.badgeTexto,
+                                color = infoVencimiento.badgeTextColor,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                            )
+                        }
+
+                        if (esBorrador) {
                             Surface(
                                 shape = RoundedCornerShape(50),
                                 color = Color(0xFFFEF3C7)

@@ -23,6 +23,7 @@ class MainActivity : ComponentActivity() {
 
         val session = SessionManager.initialize(applicationContext)
         com.example.alimentared.data.noticias.NoticiasManager.initialize(applicationContext)
+        com.example.alimentared.data.usuarios.UsuariosInternosManager.initialize(applicationContext)
         com.example.alimentared.data.remote.RetrofitClient.updateBaseUrl(session.getServerUrl())
 
         setContent {
@@ -61,13 +62,7 @@ fun AlimentaRedApp() {
         composable("onboarding") {
             OnboardingScreen(
                 onIrALogin = { navController.navigate("login") },
-                onIrAPruebas = { navController.navigate("login_pruebas") },
-                onLoginExitoso = { rol ->
-                    rolUsuarioActual = rol
-                    navController.navigate("main") {
-                        popUpTo("onboarding") { inclusive = true }
-                    }
-                }
+                onIrAPruebas = { navController.navigate("login_pruebas") }
             )
         }
 

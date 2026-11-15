@@ -367,11 +367,34 @@ fun AsignacionCard(
             Text("Cantidad Asignada: ${asignacion.cantidadAsignada} Kg", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = EcoForestGreen)
 
             if (asignacion.instruccionesRecogida != null) {
+                var mostrarMapaAsignacion by remember { mutableStateOf(false) }
+
                 Surface(color = EcoMintLight, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(10.dp)) {
+                    Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text("📋 Instrucciones: ${asignacion.instruccionesRecogida}", fontSize = 11.sp, color = EcoTextPrimary)
                         Text("📞 Donante: ${asignacion.contactoDonante ?: "En portería"}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = EcoForestGreen)
+
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                            TextButton(
+                                onClick = { mostrarMapaAsignacion = true },
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                            ) {
+                                Icon(Icons.Default.Map, contentDescription = null, tint = EcoForestGreen, modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Ver en Mapa 📍", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = EcoForestGreen)
+                            }
+                        }
                     }
+                }
+
+                if (mostrarMapaAsignacion) {
+                    com.example.alimentared.ui.components.MapaVisorDialog(
+                        ubicacionTexto = asignacion.instruccionesRecogida,
+                        nombreDonacion = asignacion.loteNombre ?: "Punto de Entrega",
+                        instrucciones = asignacion.instruccionesRecogida,
+                        contacto = asignacion.contactoDonante,
+                        onDismiss = { mostrarMapaAsignacion = false }
+                    )
                 }
             }
 

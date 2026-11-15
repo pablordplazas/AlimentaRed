@@ -33,6 +33,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import android.accounts.AccountManager
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -53,6 +58,37 @@ fun LoginScreen(
 
     var modoRegistro by remember { mutableStateOf(false) }
     var mostrarDialogoGoogle by remember { mutableStateOf(false) }
+    var correoGoogleSeleccionado by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
+
+    val accountPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val accountName = result.data?.getStringExtra(AccountManager.KEY_ACCOUNT_NAME)
+            if (!accountName.isNullOrBlank()) {
+                correoGoogleSeleccionado = accountName
+            }
+        }
+        mostrarDialogoGoogle = true
+    }
+
+    fun iniciarGoogleReal() {
+        try {
+            val intent = AccountManager.newChooseAccountIntent(
+                null,
+                null,
+                arrayOf("com.google"),
+                null,
+                null,
+                null,
+                null
+            )
+            accountPickerLauncher.launch(intent)
+        } catch (e: Exception) {
+            mostrarDialogoGoogle = true
+        }
+    }
 
     // Campos Login
     var email by remember { mutableStateOf(if (esModoPruebas) "receptora@pancompartido.org" else "") }
@@ -155,14 +191,23 @@ fun LoginScreen(
         return esValido
     }
 
-    val accesosRapidos = listOf(
-        Triple("Receptora", "receptora@pancompartido.org", "Pass12345"),
-        Triple("Donante", "donante@saborcasero.com", "Pass12345"),
-        Triple("Coordinador", "coordinador@alimentared.com", "Coord12345"),
-        Triple("Admin", "admin@alimentared.com", "Admin12345"),
-        Triple("Panadería Sol (Suspendida)", "suspendido@panaderiasol.com", "Pass12345"),
-        Triple("Abuelitos de la Paz (2 Strikes)", "suspendido@abuelitospaz.org", "Pass12345")
-    )
+    val usuariosCreados = remember { com.example.alimentared.data.usuarios.UsuariosInternosManager.obtenerUsuariosCreados() }
+    val accesosRapidos = remember(usuariosCreados) {
+        val lista = mutableListOf(
+            Triple("Receptora", "receptora@pancompartido.org", "Pass12345"),
+            Triple("Donante", "donante@saborcasero.com", "Pass12345"),
+            Triple("Coordinador", "coordinador@alimentared.com", "Coord12345"),
+            Triple("Admin", "admin@alimentared.com", "Admin12345")
+        )
+        usuariosCreados.forEach { u ->
+            val prefijo = if (u.rol.contains("ADMIN")) "Admin" else "Coord"
+            val primerNombre = u.nombre.trim().split(" ").firstOrNull() ?: u.nombre
+            lista.add(Triple("$prefijo: $primerNombre", u.correo, u.contrasena))
+        }
+        lista.add(Triple("Panadería Sol (Suspendida)", "suspendido@panaderiasol.com", "Pass12345"))
+        lista.add(Triple("Abuelitos de la Paz (2 Strikes)", "suspendido@abuelitospaz.org", "Pass12345"))
+        lista
+    }
 
     LaunchedEffect(uiState.isSuccess, uiState.user) {
         if (uiState.isSuccess && uiState.user != null) {
@@ -494,9 +539,15 @@ fun LoginScreen(
                         HorizontalDivider(modifier = Modifier.weight(1f), color = EcoBorder)
                     }
 
-                    // BOTÓN INICIAR SESIÓN CON GOOGLE OFICIAL
+                    // BOTÓN INICIAR SESIÓN CON GOOGLE
                     OutlinedButton(
-                        onClick = { mostrarDialogoGoogle = true },
+                        onClick = {
+                            if (esModoPruebas) {
+                                mostrarDialogoGoogle = true
+                            } else {
+                                iniciarGoogleReal()
+                            }
+                        },
                         enabled = !uiState.isLoading,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -808,9 +859,18 @@ fun LoginScreen(
 
     if (mostrarDialogoGoogle) {
         GoogleSignInDialog(
-            onDismiss = { mostrarDialogoGoogle = false },
+            esModoDemo = esModoPruebas,
+            correoInicial = correoGoogleSeleccionado,
+            onDismiss = {
+                mostrarDialogoGoogle = false
+                correoGoogleSeleccionado = null
+            },
+            onElegirCuentaDispositivo = if (!esModoPruebas) {
+                { iniciarGoogleReal() }
+            } else null,
             onCuentaSeleccionada = { idToken, correo, nombre, rol ->
                 mostrarDialogoGoogle = false
+                correoGoogleSeleccionado = null
                 authViewModel.loginConGoogle(
                     idToken = idToken,
                     correo = correo,

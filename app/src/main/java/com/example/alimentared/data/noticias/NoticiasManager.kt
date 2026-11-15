@@ -95,13 +95,20 @@ class NoticiasManager private constructor(context: Context) {
             guardarNoticias(actual)
             false // Removido
         } else {
+            val info = com.example.alimentared.util.VencimientoUtils.calcularInfoVencimiento(lote.fechaCaducidad, lote.rescateUrgente)
+            val cat = if (info.esPrioridadAlta) "⚡ RESCATE PRIORITARIO" else "DONACIÓN DESTACADA"
+            val resumenVenc = if (info.esPrioridadAlta) {
+                "¡Alerta de prioridad! Vence el ${info.fechaFormateada} (${info.tiempoRestanteTexto}). Disponibles ${lote.cantidadDisponible} ${lote.unidadMedida ?: "KG"} de ${lote.nombre} en ${lote.ubicacion ?: "punto de entrega"}. ¡Solicítalo con urgencia!"
+            } else {
+                "Disponibles ${lote.cantidadDisponible} ${lote.unidadMedida ?: "KG"} de ${lote.nombre} en ${lote.ubicacion ?: "punto de entrega"}. Fecha de caducidad: ${info.fechaFormateada}."
+            }
             val nueva = NoticiaImpacto(
                 id = System.currentTimeMillis(),
-                titulo = "¡Donación Disponible: ${lote.nombre}!",
+                titulo = if (info.esPrioridadAlta) "¡Prioridad Alta: ${lote.nombre}!" else "¡Donación Disponible: ${lote.nombre}!",
                 entidad = lote.donanteNombre ?: "Comercio Donante",
                 fecha = "Hoy",
-                resumen = "Se encuentran disponibles ${lote.cantidadDisponible} ${lote.unidadMedida ?: "KG"} de ${lote.nombre} en ${lote.ubicacion ?: "punto de entrega"}. ¡Solicítalo antes de su vencimiento!",
-                categoria = "DONACIÓN DESTACADA",
+                resumen = resumenVenc,
+                categoria = cat,
                 esDestacada = true,
                 referenciaId = lote.id,
                 tipoReferencia = "LOTE"

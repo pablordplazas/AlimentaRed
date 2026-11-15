@@ -24,6 +24,7 @@ import com.example.alimentared.data.session.SessionManager
 import com.example.alimentared.ui.components.AlimentaRedTopBar
 import com.example.alimentared.ui.theme.*
 import com.example.alimentared.ui.viewmodels.LoteDetailViewModel
+import com.example.alimentared.util.VencimientoUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,6 +41,7 @@ fun LoteDetailScreen(
     val orgVerificada = usuarioActual?.organizacion?.verificada ?: false
 
     var mensajePublicacionBorrador by remember { mutableStateOf<String?>(null) }
+    var mostrarMapaVisor by remember { mutableStateOf(false) }
 
     LaunchedEffect(loteId) {
         viewModel.cargarDetalle(loteId)
@@ -103,8 +105,12 @@ fun LoteDetailScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                // ALERTA DE RESCATE URGENTE SI APLICA
-                if (lote.rescateUrgente) {
+                // ALERTA DE PRIORIDAD AUTOMÁTICA O RESCATE URGENTE
+                val infoVencimiento = remember(lote.fechaCaducidad, lote.rescateUrgente) {
+                    VencimientoUtils.calcularInfoVencimiento(lote.fechaCaducidad, lote.rescateUrgente)
+                }
+
+                if (infoVencimiento.esPrioridadAlta || lote.rescateUrgente) {
                     Card(
                         colors = CardDefaults.cardColors(containerColor = EcoAmber.copy(alpha = 0.15f)),
                         shape = RoundedCornerShape(18.dp),
@@ -112,18 +118,26 @@ fun LoteDetailScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Surface(shape = CircleShape, color = EcoAmber, modifier = Modifier.size(32.dp)) {
+                            Surface(shape = CircleShape, color = EcoAmber, modifier = Modifier.size(36.dp)) {
                                 Box(contentAlignment = Alignment.Center) {
-                                    Icon(Icons.Default.Timer, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                                    Icon(Icons.Default.Bolt, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
                                 }
                             }
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text(
-                                "¡Alerta de Rescate Urgente! Caduca en menos de 4 horas. Prioridad máxima de retiro.",
-                                color = EcoAmberDark,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    "¡Alerta de Prioridad Automática!",
+                                    color = EcoAmberDark,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    infoVencimiento.alertaMensaje ?: "Este lote vence en ${infoVencimiento.tiempoRestanteTexto}. Prioridad máxima de retiro para evitar desperdicio.",
+                                    color = EcoTextPrimary,
+                                    fontSize = 11.sp,
+                                    lineHeight = 16.sp
+                                )
+                            }
                         }
                     }
                 }
@@ -142,17 +156,32 @@ fun LoteDetailScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Surface(
-                                shape = RoundedCornerShape(50),
-                                color = EcoMintGreen
-                            ) {
-                                Text(
-                                    (lote.categoriaNombre ?: "ALIMENTO").uppercase(),
-                                    color = EcoForestGreen,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 11.sp,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                                )
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Surface(
+                                    shape = RoundedCornerShape(50),
+                                    color = EcoMintGreen
+                                ) {
+                                    Text(
+                                        (lote.categoriaNombre ?: "ALIMENTO").uppercase(),
+                                        color = EcoForestGreen,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 11.sp,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                    )
+                                }
+
+                                Surface(
+                                    shape = RoundedCornerShape(50),
+                                    color = infoVencimiento.badgeColor
+                                ) {
+                                    Text(
+                                        infoVencimiento.badgeTexto,
+                                        color = infoVencimiento.badgeTextColor,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 10.sp,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                    )
+                                }
                             }
 
                             if (esBorrador) {
@@ -195,6 +224,39 @@ fun LoteDetailScreen(
                             Column {
                                 Text("Múltiplo de Entrega", fontSize = 11.sp, color = EcoTextMuted)
                                 Text("${lote.multiplo} ${lote.unidadMedida}", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = EcoTextPrimary)
+                            }
+                        }
+
+                        // DETALLES ESPECÍFICOS DE VENCIMIENTO Y CADUCIDAD
+                        HorizontalDivider(color = EcoBorder, modifier = Modifier.padding(vertical = 4.dp))
+
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Column {
+                                Text("Fecha de Caducidad", fontSize = 11.sp, color = EcoTextMuted)
+                                Text(
+                                    infoVencimiento.fechaFormateada,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp,
+                                    color = if (infoVencimiento.esPrioridadAlta) EcoAmberDark else EcoTextPrimary
+                                )
+                            }
+                            Column {
+                                Text("Vigencia Restante", fontSize = 11.sp, color = EcoTextMuted)
+                                Text(
+                                    infoVencimiento.tiempoRestanteTexto,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp,
+                                    color = if (infoVencimiento.esPrioridadAlta) EcoAmberDark else EcoForestGreen
+                                )
+                            }
+                            Column {
+                                Text("Nivel de Prioridad", fontSize = 11.sp, color = EcoTextMuted)
+                                Text(
+                                    if (infoVencimiento.esPrioridadAlta) "⚡ ALTA" else "NORMAL",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp,
+                                    color = if (infoVencimiento.esPrioridadAlta) EcoAmberDark else EcoForestGreen
+                                )
                             }
                         }
 
@@ -285,36 +347,53 @@ fun LoteDetailScreen(
                     }
                 }
 
-                // DATOS ENMASCARADOS DE RECOGIDA (RF04 / PRIVACIDAD)
+                // 3. LOGÍSTICA DE RECOGIDA Y UBICACIÓN CON MAPA INTERACTIVO
+                val puedeVerUbicacionExacta = (lote.instruccionesRecogida != null) ||
+                        rolUsuario.contains("DONANTE", ignoreCase = true) ||
+                        rolUsuario.contains("COORD", ignoreCase = true) ||
+                        rolUsuario.contains("ADMIN", ignoreCase = true)
+
                 Card(
                     colors = CardDefaults.cardColors(
-                        containerColor = if (lote.instruccionesRecogida != null) EcoMintLight else EcoSurface
+                        containerColor = if (puedeVerUbicacionExacta) EcoMintLight else EcoSurface
                     ),
                     shape = RoundedCornerShape(20.dp),
-                    border = BorderStroke(1.dp, if (lote.instruccionesRecogida != null) EcoMintGreen else EcoBorder),
+                    border = BorderStroke(1.dp, if (puedeVerUbicacionExacta) EcoMintGreen else EcoBorder),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
-                                if (lote.instruccionesRecogida != null) Icons.Default.LockOpen else Icons.Default.Lock,
+                                if (puedeVerUbicacionExacta) Icons.Default.LockOpen else Icons.Default.Lock,
                                 contentDescription = null,
-                                tint = if (lote.instruccionesRecogida != null) EcoForestGreen else EcoOliveGreen,
+                                tint = if (puedeVerUbicacionExacta) EcoForestGreen else EcoOliveGreen,
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                if (lote.instruccionesRecogida != null) "Instrucciones de Retiro Físico (Asignado)" else "Logística de Recogida (Enmascarada)",
+                                if (puedeVerUbicacionExacta) "Ubicación y Logística de Recogida" else "Logística de Recogida (Enmascarada)",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 13.sp,
                                 color = EcoTextPrimary
                             )
                         }
 
-                        if (lote.instruccionesRecogida != null) {
-                            Text("📍 Ubicación: ${lote.ubicacion ?: "Sede Donante"}", fontSize = 12.sp, color = EcoTextPrimary)
-                            Text("📋 Indicaciones: ${lote.instruccionesRecogida}", fontSize = 12.sp, color = EcoTextMuted)
-                            Text("📞 Contacto: ${lote.contacto ?: "No especificado"}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = EcoForestGreen)
+                        if (puedeVerUbicacionExacta) {
+                            // Mini-mapa interactivo para ver la ubicación exacta
+                            com.example.alimentared.ui.components.UbicacionLogisticaCard(
+                                ubicacionTexto = lote.ubicacion,
+                                esEditable = false,
+                                titulo = "Punto de Recogida: ${lote.nombre}",
+                                subtitulo = lote.ubicacion ?: "Sede Donante",
+                                onAbrirVisor = { mostrarMapaVisor = true }
+                            )
+
+                            if (!lote.instruccionesRecogida.isNullOrBlank()) {
+                                Text("📋 Indicaciones: ${lote.instruccionesRecogida}", fontSize = 12.sp, color = EcoTextMuted)
+                            }
+                            if (!lote.contacto.isNullOrBlank()) {
+                                Text("📞 Contacto operativo: ${lote.contacto}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = EcoForestGreen)
+                            }
                         } else {
                             Text(
                                 "Por protocolo de seguridad y equidad, la dirección exacta, horario de muelle y contacto solo se revelan a la fundación una vez que la solicitud sea formalmente asignada.",
@@ -322,6 +401,24 @@ fun LoteDetailScreen(
                                 color = EcoTextMuted,
                                 lineHeight = 16.sp
                             )
+                            val zonaLimpia = com.example.alimentared.util.LogisticaLocationUtils.extraerDireccionLimpia(lote.ubicacion)
+                            if (zonaLimpia.isNotBlank()) {
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = EcoBackground,
+                                    border = BorderStroke(1.dp, EcoBorder),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(10.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(Icons.Default.Place, contentDescription = null, tint = EcoForestGreen, modifier = Modifier.size(18.dp))
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text("Zona general: $zonaLimpia", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = EcoForestGreen)
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -521,5 +618,16 @@ fun LoteDetailScreen(
                 }
             }
         }
+    }
+
+    if (mostrarMapaVisor && uiState.lote != null) {
+        val lote = uiState.lote!!
+        com.example.alimentared.ui.components.MapaVisorDialog(
+            ubicacionTexto = lote.ubicacion,
+            nombreDonacion = lote.nombre,
+            instrucciones = lote.instruccionesRecogida,
+            contacto = lote.contacto,
+            onDismiss = { mostrarMapaVisor = false }
+        )
     }
 }

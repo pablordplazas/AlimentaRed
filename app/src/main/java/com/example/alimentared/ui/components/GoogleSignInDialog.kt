@@ -10,7 +10,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,11 +27,24 @@ import com.example.alimentared.ui.theme.*
 @Composable
 fun GoogleSignInDialog(
     onDismiss: () -> Unit,
-    onCuentaSeleccionada: (idToken: String, correo: String, nombre: String, rol: String) -> Unit
+    onCuentaSeleccionada: (idToken: String, correo: String, nombre: String, rol: String) -> Unit,
+    esModoDemo: Boolean = false,
+    correoInicial: String? = null,
+    onElegirCuentaDispositivo: (() -> Unit)? = null
 ) {
-    var mostrarFormularioPersonalizado by remember { mutableStateOf(false) }
-    var correoPersonalizado by remember { mutableStateOf("") }
-    var nombrePersonalizado by remember { mutableStateOf("") }
+    var mostrarFormularioPersonalizado by remember(esModoDemo) { mutableStateOf(!esModoDemo) }
+    var correoPersonalizado by remember(correoInicial) { mutableStateOf(correoInicial ?: "") }
+    var nombrePersonalizado by remember(correoInicial) {
+        val derivado = if (!correoInicial.isNullOrBlank()) {
+            correoInicial.substringBefore("@")
+                .replace(".", " ")
+                .replace("_", " ")
+                .split(" ")
+                .filter { it.isNotBlank() }
+                .joinToString(" ") { it.replaceFirstChar { char -> char.uppercase() } }
+        } else ""
+        mutableStateOf(derivado)
+    }
     var rolPersonalizado by remember { mutableStateOf("DONANTE") }
     var errorValidacion by remember { mutableStateOf<String?>(null) }
 
@@ -66,7 +79,7 @@ fun GoogleSignInDialog(
                         )
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            text = "Acceder con Google",
+                            text = if (esModoDemo) "Acceder con Google" else "Acceder con Google",
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF202124)
@@ -83,7 +96,11 @@ fun GoogleSignInDialog(
                 Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
-                    text = "Selecciona una cuenta para continuar en AlimentaRed",
+                    text = if (esModoDemo) {
+                        "Selecciona una cuenta para continuar en AlimentaRed"
+                    } else {
+                        "Inicia sesión con tu cuenta de Google en AlimentaRed"
+                    },
                     fontSize = 13.sp,
                     color = EcoTextMuted,
                     modifier = Modifier.fillMaxWidth()
@@ -91,7 +108,8 @@ fun GoogleSignInDialog(
 
                 Spacer(modifier = Modifier.height(18.dp))
 
-                if (!mostrarFormularioPersonalizado) {
+                if (esModoDemo && !mostrarFormularioPersonalizado) {
+                    // MODO DEMO: CUENTAS PRECONFIGURADAS
                     // CUENTA 1: DONANTE GOOGLE
                     Surface(
                         shape = RoundedCornerShape(16.dp),
@@ -103,7 +121,7 @@ fun GoogleSignInDialog(
                                 onCuentaSeleccionada(
                                     "google_token_donante_${System.currentTimeMillis()}",
                                     "donante.alimentared@gmail.com",
-                                    "Donante AlimentaRed Google",
+                                    "Donante AlimentaRed",
                                     "DONANTE"
                                 )
                             }
@@ -164,7 +182,7 @@ fun GoogleSignInDialog(
                                 onCuentaSeleccionada(
                                     "google_token_receptora_${System.currentTimeMillis()}",
                                     "receptora.pan@gmail.com",
-                                    "Fundación Pan Compartido Google",
+                                    "Fundación Pan Compartido",
                                     "RECEPTORA"
                                 )
                             }
@@ -246,7 +264,35 @@ fun GoogleSignInDialog(
                         }
                     }
                 } else {
-                    // FORMULARIO CUENTA PERSONALIZADA GOOGLE
+                    // CUENTA REAL DE GOOGLE / FORMULARIO
+                    if (!esModoDemo && onElegirCuentaDispositivo != null) {
+                        OutlinedButton(
+                            onClick = onElegirCuentaDispositivo,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(46.dp),
+                            shape = RoundedCornerShape(50),
+                            border = BorderStroke(1.dp, Color(0xFFDADCE0)),
+                            colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFFF8F9FA))
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PhoneAndroid,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                                tint = EcoForestGreen
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Elegir cuenta del dispositivo",
+                                fontSize = 13.sp,
+                                color = EcoTextPrimary,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+
                     OutlinedTextField(
                         value = nombrePersonalizado,
                         onValueChange = { nombrePersonalizado = it; errorValidacion = null },
@@ -272,12 +318,14 @@ fun GoogleSignInDialog(
                     Spacer(modifier = Modifier.height(10.dp))
 
                     Text(
-                        "Participar como:",
+                        "Participar en AlimentaRed como:",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = EcoTextMuted,
                         modifier = Modifier.fillMaxWidth()
                     )
+
+                    Spacer(modifier = Modifier.height(6.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -286,14 +334,24 @@ fun GoogleSignInDialog(
                         FilterChip(
                             selected = rolPersonalizado == "DONANTE",
                             onClick = { rolPersonalizado = "DONANTE" },
-                            label = { Text("Donante", fontSize = 11.sp) },
-                            modifier = Modifier.weight(1f)
+                            label = { Text("Donante", fontSize = 11.sp, fontWeight = if (rolPersonalizado == "DONANTE") FontWeight.Bold else FontWeight.Normal) },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(50),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = EcoMintLight,
+                                selectedLabelColor = EcoForestGreen
+                            )
                         )
                         FilterChip(
                             selected = rolPersonalizado == "RECEPTORA",
                             onClick = { rolPersonalizado = "RECEPTORA" },
-                            label = { Text("Receptora", fontSize = 11.sp) },
-                            modifier = Modifier.weight(1f)
+                            label = { Text("Receptora", fontSize = 11.sp, fontWeight = if (rolPersonalizado == "RECEPTORA") FontWeight.Bold else FontWeight.Normal) },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(50),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = EcoMintLight,
+                                selectedLabelColor = EcoForestGreen
+                            )
                         )
                     }
 
@@ -306,18 +364,24 @@ fun GoogleSignInDialog(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         OutlinedButton(
-                            onClick = { mostrarFormularioPersonalizado = false },
+                            onClick = {
+                                if (esModoDemo) {
+                                    mostrarFormularioPersonalizado = false
+                                } else {
+                                    onDismiss()
+                                }
+                            },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(50)
                         ) {
-                            Text("Atrás", fontSize = 13.sp)
+                            Text(if (esModoDemo) "Atrás" else "Cancelar", fontSize = 13.sp)
                         }
 
                         Button(
@@ -329,8 +393,9 @@ fun GoogleSignInDialog(
                                     return@Button
                                 }
                                 val nom = if (n.isNotBlank()) n else c.substringBefore("@")
+                                val tokenPrefix = if (esModoDemo) "google_token_demo" else "google_token_real"
                                 onCuentaSeleccionada(
-                                    "google_token_custom_${System.currentTimeMillis()}",
+                                    "${tokenPrefix}_${System.currentTimeMillis()}",
                                     c,
                                     nom,
                                     rolPersonalizado

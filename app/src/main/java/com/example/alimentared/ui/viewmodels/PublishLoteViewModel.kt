@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.alimentared.data.model.LoteRequest
 import com.example.alimentared.data.model.TipoAlimentoResponse
 import com.example.alimentared.data.remote.RetrofitClient
+import com.example.alimentared.util.VencimientoUtils
 import com.example.alimentared.util.removerCodigosRegla
 import com.google.gson.Gson
 import com.google.gson.JsonObject
@@ -51,7 +52,7 @@ class PublishLoteViewModel : ViewModel() {
         unidadMinima: Double,
         multiplo: Double,
         estadoAlimento: String,
-        horasVigencia: Int,
+        fechaCaducidad: String,
         ubicacion: String?,
         instrucciones: String?,
         contacto: String?
@@ -69,14 +70,21 @@ class PublishLoteViewModel : ViewModel() {
             return
         }
 
+        val errorFecha = VencimientoUtils.validarFechaCaducidad(fechaCaducidad)
+        if (errorFecha != null) {
+            _uiState.value = _uiState.value.copy(error = errorFecha)
+            return
+        }
+
+        val fechaCaducidadIso = VencimientoUtils.formatearParaEnvioBackend(fechaCaducidad)
+            ?: run {
+                _uiState.value = _uiState.value.copy(error = "Formato de fecha de vencimiento no válido.")
+                return
+            }
+
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
-                // Calcular fecha de caducidad
-                val expiraMillis = System.currentTimeMillis() + (horasVigencia.toLong() * 3600 * 1000)
-                val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
-                val fechaCaducidadIso = sdf.format(Date(expiraMillis))
-
                 val request = LoteRequest(
                     nombre = nombre.trim(),
                     descripcion = descripcion.trim(),
