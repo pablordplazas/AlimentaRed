@@ -1,12 +1,19 @@
 package com.example.alimentared.ui.screens
 
 import android.app.DatePickerDialog
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -16,12 +23,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import com.example.alimentared.data.lotes.LoteImagenesManager
 import com.example.alimentared.ui.components.AlimentaRedTopBar
 import com.example.alimentared.ui.theme.*
 import com.example.alimentared.ui.viewmodels.PublishLoteViewModel
@@ -65,6 +76,44 @@ fun PublishLoteScreen(
     var mostrarMapaSelector by remember { mutableStateOf(false) }
     var instrucciones by remember { mutableStateOf("") }
     var contacto by remember { mutableStateOf("") }
+
+    var fotosSeleccionadas by remember { mutableStateOf<List<String>>(emptyList()) }
+    var errorFotos by remember { mutableStateOf<String?>(null) }
+
+    val pickMultipleVisualMediaLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickMultipleVisualMedia(maxItems = 3)
+    ) { uris ->
+        if (uris.isNotEmpty()) {
+            val nuevasFotos = uris.mapNotNull { uri ->
+                LoteImagenesManager.guardarImagenDesdeUri(context, uri)
+            }
+            val espacioDisponible = 3 - fotosSeleccionadas.size
+            val aAgregar = nuevasFotos.take(espacioDisponible)
+            fotosSeleccionadas = (fotosSeleccionadas + aAgregar).distinct().take(3)
+            if (fotosSeleccionadas.isNotEmpty()) {
+                errorFotos = null
+            }
+            if (nuevasFotos.size > espacioDisponible) {
+                Toast.makeText(context, "Se agregaron fotos hasta completar el límite de 3", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    val takePicturePreviewLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview()
+    ) { bitmap ->
+        if (bitmap != null) {
+            val path = LoteImagenesManager.guardarImagenDesdeBitmap(context, bitmap)
+            if (path != null) {
+                if (fotosSeleccionadas.size < 3) {
+                    fotosSeleccionadas = (fotosSeleccionadas + path).take(3)
+                    errorFotos = null
+                } else {
+                    Toast.makeText(context, "Límite máximo de 3 fotos alcanzado", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
 
     fun abrirCalendario() {
         val calendar = Calendar.getInstance()
@@ -204,6 +253,230 @@ fun PublishLoteScreen(
                 modifier = Modifier.fillMaxWidth(),
                 colors = ecoFieldColors
             )
+
+            // SECCIÓN FOTOGRAFÍAS DEL LOTE (MÍNIMO 1, MÁXIMO 3 FOTOS OBLIGATORIAS)
+            Card(
+                colors = CardDefaults.cardColors(containerColor = EcoSurface),
+                shape = RoundedCornerShape(20.dp),
+                border = BorderStroke(1.dp, if (errorFotos != null) EcoRed else EcoBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.AddPhotoAlternate,
+                                contentDescription = null,
+                                tint = EcoForestGreen,
+                                modifier = Modifier.size(22.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Fotos del Lote *",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = EcoTextPrimary
+                            )
+                        }
+
+                        // Contador e indicador de cumplimiento
+                        val fotosValidas = fotosSeleccionadas.isNotEmpty()
+                        Surface(
+                            shape = RoundedCornerShape(50),
+                            color = if (fotosValidas) EcoMintGreen else Color(0xFFFEF2F2)
+                        ) {
+                            Text(
+                                text = if (fotosValidas) "${fotosSeleccionadas.size}/3 fotos (Requisito OK)" else "0/3 fotos (Mínimo 1)",
+                                color = if (fotosValidas) EcoForestGreen else EcoRed,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                            )
+                        }
+                    }
+
+                    Text(
+                        text = "Cada donante debe subir entre 1 y 3 fotografías reales para certificar la inocuidad, empaque y estado físico del lote ante los receptores.",
+                        fontSize = 11.sp,
+                        color = EcoTextMuted,
+                        lineHeight = 15.sp
+                    )
+
+                    // Carrusel / Fila de fotos seleccionadas
+                    if (fotosSeleccionadas.isNotEmpty()) {
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            itemsIndexed(fotosSeleccionadas) { index, fotoPath ->
+                                Box(
+                                    modifier = Modifier
+                                        .size(105.dp)
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(EcoMintLight)
+                                ) {
+                                    AsyncImage(
+                                        model = fotoPath,
+                                        contentDescription = "Foto ${index + 1}",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+
+                                    // Badge Foto 1 (Principal)
+                                    Surface(
+                                        shape = RoundedCornerShape(bottomEnd = 10.dp),
+                                        color = if (index == 0) EcoForestGreen else Color.Black.copy(alpha = 0.6f),
+                                        modifier = Modifier.align(Alignment.TopStart)
+                                    ) {
+                                        Text(
+                                            text = if (index == 0) "Principal" else "#${index + 1}",
+                                            color = Color.White,
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
+
+                                    // Botón para eliminar foto
+                                    IconButton(
+                                        onClick = {
+                                            fotosSeleccionadas = fotosSeleccionadas.filterIndexed { i, _ -> i != index }
+                                            if (fotosSeleccionadas.isEmpty()) {
+                                                errorFotos = "Debes tener al menos 1 fotografía del lote."
+                                            }
+                                        },
+                                        modifier = Modifier
+                                            .size(28.dp)
+                                            .align(Alignment.TopEnd)
+                                            .padding(4.dp)
+                                    ) {
+                                        Surface(
+                                            shape = CircleShape,
+                                            color = Color.Black.copy(alpha = 0.7f),
+                                            modifier = Modifier.size(20.dp)
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Close,
+                                                    contentDescription = "Eliminar foto",
+                                                    tint = Color.White,
+                                                    modifier = Modifier.size(12.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Tarjeta '+' para añadir más si hay menos de 3
+                            if (fotosSeleccionadas.size < 3) {
+                                item {
+                                    Surface(
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = EcoMintGreen.copy(alpha = 0.4f),
+                                        border = BorderStroke(1.dp, EcoForestGreen),
+                                        modifier = Modifier
+                                            .size(105.dp)
+                                            .clickable {
+                                                pickMultipleVisualMediaLauncher.launch(
+                                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                                )
+                                            }
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.fillMaxSize(),
+                                            verticalArrangement = Arrangement.Center,
+                                            horizontalAlignment = Alignment.CenterHorizontally
+                                        ) {
+                                            Icon(
+                                                Icons.Default.AddAPhoto,
+                                                contentDescription = "Añadir más",
+                                                tint = EcoForestGreen,
+                                                modifier = Modifier.size(26.dp)
+                                            )
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Text(
+                                                "Añadir otra",
+                                                fontSize = 11.sp,
+                                                color = EcoForestGreen,
+                                                fontWeight = FontWeight.SemiBold
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Botones de acción para seleccionar o tomar fotos
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = {
+                                if (fotosSeleccionadas.size >= 3) {
+                                    Toast.makeText(context, "Ya has alcanzado el límite de 3 fotos", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    takePicturePreviewLauncher.launch(null)
+                                }
+                            },
+                            enabled = fotosSeleccionadas.size < 3,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(44.dp),
+                            shape = RoundedCornerShape(50),
+                            border = BorderStroke(1.dp, EcoForestGreen),
+                            colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White)
+                        ) {
+                            Icon(Icons.Default.PhotoCamera, contentDescription = null, tint = EcoForestGreen, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Cámara", color = EcoForestGreen, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        }
+
+                        Button(
+                            onClick = {
+                                if (fotosSeleccionadas.size >= 3) {
+                                    Toast.makeText(context, "Ya has alcanzado el límite de 3 fotos", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    pickMultipleVisualMediaLauncher.launch(
+                                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                    )
+                                }
+                            },
+                            enabled = fotosSeleccionadas.size < 3,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(44.dp),
+                            shape = RoundedCornerShape(50),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = EcoForestGreen,
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Icon(Icons.Default.PhotoLibrary, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Galería", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+
+                    if (errorFotos != null) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.ErrorOutline, contentDescription = null, tint = EcoRed, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(errorFotos!!, color = EcoRed, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                        }
+                    }
+                }
+            }
 
             Text("Categoría:", fontSize = 12.sp, color = EcoTextPrimary, fontWeight = FontWeight.Bold)
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -518,6 +791,10 @@ fun PublishLoteScreen(
                         errorFechaCaducidad = errFecha
                         return@Button
                     }
+                    if (fotosSeleccionadas.isEmpty()) {
+                        errorFotos = "Debes subir al menos 1 fotografía del lote (mínimo 1, máximo 3) para garantizar la visibilidad de la donación a los receptores."
+                        return@Button
+                    }
                     val cid = categoriaId ?: 1L
                     val cant = cantidad.toDoubleOrNull() ?: 0.0
                     val umin = unidadMinima.toDoubleOrNull() ?: 0.0
@@ -533,7 +810,8 @@ fun PublishLoteScreen(
                         fechaCaducidad = fechaCaducidadTexto,
                         ubicacion = ubicacion,
                         instrucciones = instrucciones,
-                        contacto = contacto
+                        contacto = contacto,
+                        fotos = fotosSeleccionadas
                     )
                 },
                 enabled = !uiState.isLoading,

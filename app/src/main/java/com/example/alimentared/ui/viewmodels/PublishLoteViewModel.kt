@@ -55,10 +55,19 @@ class PublishLoteViewModel : ViewModel() {
         fechaCaducidad: String,
         ubicacion: String?,
         instrucciones: String?,
-        contacto: String?
+        contacto: String?,
+        fotos: List<String> = emptyList()
     ) {
         if (nombre.isBlank() || descripcion.isBlank()) {
             _uiState.value = _uiState.value.copy(error = "El nombre y la descripción son obligatorios.")
+            return
+        }
+        if (fotos.isEmpty()) {
+            _uiState.value = _uiState.value.copy(error = "Debes subir al menos 1 fotografía del lote (mínimo 1, máximo 3) para garantizar la visibilidad de la donación.")
+            return
+        }
+        if (fotos.size > 3) {
+            _uiState.value = _uiState.value.copy(error = "Solo se permite subir hasta un máximo de 3 fotografías por lote.")
             return
         }
         if (cantidad <= 0 || unidadMinima <= 0 || multiplo <= 0) {
@@ -96,11 +105,14 @@ class PublishLoteViewModel : ViewModel() {
                     fechaCaducidad = fechaCaducidadIso,
                     ubicacion = ubicacion?.trim(),
                     instruccionesRecogida = instrucciones?.trim(),
-                    contacto = contacto?.trim()
+                    contacto = contacto?.trim(),
+                    fotos = fotos
                 )
 
                 val res = RetrofitClient.instance.crearLote(request)
                 if (res.isSuccessful && res.body() != null) {
+                    val loteCreado = res.body()!!
+                    com.example.alimentared.data.lotes.LoteImagenesManager.asociarFotosALote(loteCreado.id, fotos)
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         publicadoExitoso = true

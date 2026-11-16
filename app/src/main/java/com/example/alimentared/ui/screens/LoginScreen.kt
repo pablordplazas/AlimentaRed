@@ -194,8 +194,10 @@ fun LoginScreen(
     val usuariosCreados = remember { com.example.alimentared.data.usuarios.UsuariosInternosManager.obtenerUsuariosCreados() }
     val accesosRapidos = remember(usuariosCreados) {
         val lista = mutableListOf(
-            Triple("Receptora", "receptora@pancompartido.org", "Pass12345"),
-            Triple("Donante", "donante@saborcasero.com", "Pass12345"),
+            Triple("Donante: Sabor Casero", "donante@saborcasero.com", "Pass12345"),
+            Triple("Donante: Panificadora Central", "donante@panificadoracentral.com", "Pass12345"),
+            Triple("Receptora: Pan Compartido", "receptora@pancompartido.org", "Pass12345"),
+            Triple("Receptora: Comedor Esperanza", "receptora@comedoresperanza.org", "Pass12345"),
             Triple("Coordinador", "coordinador@alimentared.com", "Coord12345"),
             Triple("Admin", "admin@alimentared.com", "Admin12345")
         )
@@ -205,7 +207,7 @@ fun LoginScreen(
             lista.add(Triple("$prefijo: $primerNombre", u.correo, u.contrasena))
         }
         lista.add(Triple("Panadería Sol (Suspendida)", "suspendido@panaderiasol.com", "Pass12345"))
-        lista.add(Triple("Abuelitos de la Paz (2 Strikes)", "suspendido@abuelitospaz.org", "Pass12345"))
+        lista.add(Triple("Abuelitos de la Paz (3 Strikes)", "suspendido@abuelitospaz.org", "Pass12345"))
         lista
     }
 

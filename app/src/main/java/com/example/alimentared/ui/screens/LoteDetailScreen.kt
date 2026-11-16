@@ -2,7 +2,10 @@ package com.example.alimentared.ui.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,16 +18,24 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.SubcomposeAsyncImage
+import com.example.alimentared.data.lotes.LoteImagenesManager
 import com.example.alimentared.data.session.SessionManager
 import com.example.alimentared.ui.components.AlimentaRedTopBar
 import com.example.alimentared.ui.theme.*
 import com.example.alimentared.ui.viewmodels.LoteDetailViewModel
 import com.example.alimentared.util.VencimientoUtils
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -97,6 +108,13 @@ fun LoteDetailScreen(
             val lote = uiState.lote!!
             val esBorrador = lote.estado.equals("BORRADOR", ignoreCase = true)
 
+            val fotosLote = remember(lote.id) {
+                LoteImagenesManager.obtenerFotosParaLote(lote.id, lote.nombre, lote.categoriaNombre)
+            }
+            val pagerState = rememberPagerState(initialPage = 0, pageCount = { fotosLote.size.coerceAtLeast(1) })
+            val coroutineScope = rememberCoroutineScope()
+            var fotoSeleccionadaParaZoom by remember { mutableStateOf<String?>(null) }
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -105,6 +123,245 @@ fun LoteDetailScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
+                // SECCIÓN DE FOTOGRAFÍAS DEL LOTE (INSPECCIÓN VISUAL PARA RECEPTORES - MÍN 1, MÁX 3 FOTOS)
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = EcoSurface),
+                    shape = RoundedCornerShape(24.dp),
+                    border = BorderStroke(1.dp, EcoBorder),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(240.dp)
+                                .background(EcoMintLight)
+                        ) {
+                            HorizontalPager(
+                                state = pagerState,
+                                modifier = Modifier.fillMaxSize()
+                            ) { page ->
+                                val fotoUrl = fotosLote.getOrNull(page) ?: ""
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clickable {
+                                            if (fotoUrl.isNotBlank()) {
+                                                fotoSeleccionadaParaZoom = fotoUrl
+                                            }
+                                        }
+                                ) {
+                                    if (fotoUrl.isNotBlank()) {
+                                        SubcomposeAsyncImage(
+                                            model = fotoUrl,
+                                            contentDescription = "Foto ${page + 1} de ${lote.nombre}",
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier.fillMaxSize(),
+                                            loading = {
+                                                Box(
+                                                    modifier = Modifier.fillMaxSize(),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    CircularProgressIndicator(
+                                                        color = EcoForestGreen,
+                                                        modifier = Modifier.size(36.dp)
+                                                    )
+                                                }
+                                            },
+                                            error = {
+                                                Box(
+                                                    modifier = Modifier.fillMaxSize(),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Icon(
+                                                        Icons.Default.Restaurant,
+                                                        contentDescription = null,
+                                                        tint = EcoForestGreen,
+                                                        modifier = Modifier.size(48.dp)
+                                                    )
+                                                }
+                                            }
+                                        )
+                                    } else {
+                                        Box(
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Restaurant,
+                                                contentDescription = null,
+                                                tint = EcoForestGreen,
+                                                modifier = Modifier.size(48.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Badge superior izquierdo: Verificación Sanitaria
+                            Surface(
+                                shape = RoundedCornerShape(50),
+                                color = Color.Black.copy(alpha = 0.65f),
+                                modifier = Modifier
+                                    .align(Alignment.TopStart)
+                                    .padding(12.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Default.Verified,
+                                        contentDescription = null,
+                                        tint = EcoMintGreen,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "Foto del Lote (${fotosLote.size} ${if (fotosLote.size == 1) "foto" else "fotos"})",
+                                        color = Color.White,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+
+                            // Badge superior derecho: Contador de página / foto actual
+                            Surface(
+                                shape = RoundedCornerShape(50),
+                                color = Color.Black.copy(alpha = 0.65f),
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(12.dp)
+                            ) {
+                                Text(
+                                    text = "${pagerState.currentPage + 1} / ${fotosLote.size}",
+                                    color = Color.White,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                                )
+                            }
+
+                            // Badge inferior derecho: Toca para ampliar
+                            Surface(
+                                shape = RoundedCornerShape(50),
+                                color = EcoForestGreen.copy(alpha = 0.9f),
+                                modifier = Modifier
+                                    .align(Alignment.BottomEnd)
+                                    .padding(12.dp)
+                                    .clickable {
+                                        val currentFoto = fotosLote.getOrNull(pagerState.currentPage)
+                                        if (!currentFoto.isNullOrBlank()) {
+                                            fotoSeleccionadaParaZoom = currentFoto
+                                        }
+                                    }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Default.ZoomIn,
+                                        contentDescription = "Ampliar foto",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "Toca para ampliar",
+                                        color = Color.White,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
+
+                            // Indicador de puntos (dots) centrado abajo si hay más de 1 foto
+                            if (fotosLote.size > 1) {
+                                Row(
+                                    modifier = Modifier
+                                        .align(Alignment.BottomCenter)
+                                        .padding(bottom = 12.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    repeat(fotosLote.size) { index ->
+                                        val activo = (pagerState.currentPage == index)
+                                        Box(
+                                            modifier = Modifier
+                                                .height(6.dp)
+                                                .width(if (activo) 18.dp else 6.dp)
+                                                .clip(RoundedCornerShape(50))
+                                                .background(if (activo) Color.White else Color.White.copy(alpha = 0.5f))
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // Tira de miniaturas interactivas si tiene múltiples fotos (2 o 3 fotos)
+                        if (fotosLote.size > 1) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                fotosLote.forEachIndexed { index, url ->
+                                    val esActual = (pagerState.currentPage == index)
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        border = BorderStroke(if (esActual) 2.dp else 1.dp, if (esActual) EcoForestGreen else EcoBorder),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(56.dp)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .clickable {
+                                                coroutineScope.launch {
+                                                    pagerState.animateScrollToPage(index)
+                                                }
+                                            }
+                                    ) {
+                                        SubcomposeAsyncImage(
+                                            model = url,
+                                            contentDescription = "Miniatura ${index + 1}",
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier.fillMaxSize()
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // Mensaje de garantía para el receptor
+                        Surface(
+                            color = EcoMintGreen.copy(alpha = 0.35f),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Default.Shield,
+                                    contentDescription = null,
+                                    tint = EcoForestGreen,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Fotos reales del donante: certifican empaque, estado del alimento y fecha de caducidad.",
+                                    fontSize = 11.sp,
+                                    color = EcoTextPrimary,
+                                    lineHeight = 15.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                    }
+                }
                 // ALERTA DE PRIORIDAD AUTOMÁTICA O RESCATE URGENTE
                 val infoVencimiento = remember(lote.fechaCaducidad, lote.rescateUrgente) {
                     VencimientoUtils.calcularInfoVencimiento(lote.fechaCaducidad, lote.rescateUrgente)
@@ -612,6 +869,98 @@ fun LoteDetailScreen(
                                         color = Color.White
                                     )
                                 }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (fotoSeleccionadaParaZoom != null) {
+                Dialog(
+                    onDismissRequest = { fotoSeleccionadaParaZoom = null },
+                    properties = DialogProperties(usePlatformDefaultWidth = false)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.94f))
+                            .clickable { fotoSeleccionadaParaZoom = null }
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            // Barra superior del visor con título y botón de cerrar
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 40.dp, start = 16.dp, end = 16.dp, bottom = 12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(
+                                        text = lote.nombre,
+                                        color = Color.White,
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    val numFoto = (fotosLote.indexOf(fotoSeleccionadaParaZoom) + 1).coerceAtLeast(1)
+                                    Text(
+                                        text = "Foto $numFoto de ${fotosLote.size} • Inspección de Inocuidad",
+                                        color = Color.White.copy(alpha = 0.8f),
+                                        fontSize = 12.sp
+                                    )
+                                }
+
+                                IconButton(
+                                    onClick = { fotoSeleccionadaParaZoom = null },
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .background(Color.White.copy(alpha = 0.2f), CircleShape)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Close,
+                                        contentDescription = "Cerrar visor",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+                            }
+
+                            // Imagen en pantalla completa con zoom/ajuste
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f)
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                SubcomposeAsyncImage(
+                                    model = fotoSeleccionadaParaZoom,
+                                    contentDescription = "Foto ampliada de ${lote.nombre}",
+                                    contentScale = ContentScale.Fit,
+                                    modifier = Modifier.fillMaxSize(),
+                                    loading = {
+                                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                            CircularProgressIndicator(color = Color.White)
+                                        }
+                                    }
+                                )
+                            }
+
+                            // Barra inferior informativa
+                            Surface(
+                                color = Color.Black.copy(alpha = 0.8f),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = "Inspecciona el lote a detalle. Verifica empaque, rotulado, estado del alimento y fecha de vencimiento.",
+                                    color = Color.White.copy(alpha = 0.85f),
+                                    fontSize = 12.sp,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(16.dp)
+                                )
                             }
                         }
                     }

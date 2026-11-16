@@ -24,6 +24,7 @@ class MainActivity : ComponentActivity() {
         val session = SessionManager.initialize(applicationContext)
         com.example.alimentared.data.noticias.NoticiasManager.initialize(applicationContext)
         com.example.alimentared.data.usuarios.UsuariosInternosManager.initialize(applicationContext)
+        com.example.alimentared.data.lotes.LoteImagenesManager.initialize(applicationContext)
         com.example.alimentared.data.remote.RetrofitClient.updateBaseUrl(session.getServerUrl())
 
         setContent {

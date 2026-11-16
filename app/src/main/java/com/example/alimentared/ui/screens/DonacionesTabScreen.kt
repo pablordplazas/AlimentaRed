@@ -17,11 +17,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.SubcomposeAsyncImage
+import com.example.alimentared.data.lotes.LoteImagenesManager
 import com.example.alimentared.data.model.LoteResponse
 import com.example.alimentared.data.session.SessionManager
 import com.example.alimentared.ui.theme.*
@@ -490,6 +493,11 @@ fun LoteCardItem(
     val esBorrador = lote.estado.equals("BORRADOR", ignoreCase = true)
     val esDisponible = lote.estado.equals("DISPONIBLE", ignoreCase = true)
 
+    val fotosLote = remember(lote.id) {
+        LoteImagenesManager.obtenerFotosParaLote(lote.id, lote.nombre, lote.categoriaNombre)
+    }
+    val fotoPrincipal = fotosLote.firstOrNull() ?: ""
+
     Card(
         onClick = onClick,
         shape = RoundedCornerShape(20.dp),
@@ -503,20 +511,81 @@ fun LoteCardItem(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Ilustración / Avatar circular temático del alimento
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = EcoMintLight,
-                    modifier = Modifier.size(64.dp)
+                // Fotografía real del lote con indicador de cantidad de fotos
+                Box(
+                    modifier = Modifier
+                        .size(76.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(EcoMintLight)
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        val icon = when {
-                            lote.nombre.contains("pan", ignoreCase = true) -> Icons.Default.BakeryDining
-                            lote.nombre.contains("manzana", ignoreCase = true) || lote.nombre.contains("fruta", ignoreCase = true) -> Icons.Default.Eco
-                            lote.nombre.contains("verdura", ignoreCase = true) || lote.nombre.contains("papa", ignoreCase = true) -> Icons.Default.Grass
-                            else -> Icons.Default.Restaurant
+                    if (fotoPrincipal.isNotBlank()) {
+                        SubcomposeAsyncImage(
+                            model = fotoPrincipal,
+                            contentDescription = lote.nombre,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize(),
+                            loading = {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(
+                                        color = EcoForestGreen,
+                                        strokeWidth = 2.dp,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                            },
+                            error = {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    val icon = when {
+                                        lote.nombre.contains("pan", ignoreCase = true) -> Icons.Default.BakeryDining
+                                        lote.nombre.contains("manzana", ignoreCase = true) || lote.nombre.contains("fruta", ignoreCase = true) -> Icons.Default.Eco
+                                        lote.nombre.contains("verdura", ignoreCase = true) || lote.nombre.contains("papa", ignoreCase = true) -> Icons.Default.Grass
+                                        else -> Icons.Default.Restaurant
+                                    }
+                                    Icon(icon, contentDescription = null, tint = EcoForestGreen, modifier = Modifier.size(32.dp))
+                                }
+                            }
+                        )
+
+                        // Badge con número de fotos si tiene más de 1 foto
+                        if (fotosLote.size > 1) {
+                            Surface(
+                                shape = RoundedCornerShape(topStart = 8.dp),
+                                color = Color.Black.copy(alpha = 0.65f),
+                                modifier = Modifier.align(Alignment.BottomEnd)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Default.PhotoLibrary,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(10.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(2.dp))
+                                    Text(
+                                        text = "${fotosLote.size}",
+                                        color = Color.White,
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
                         }
-                        Icon(icon, contentDescription = null, tint = EcoForestGreen, modifier = Modifier.size(32.dp))
+                    } else {
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                            val icon = when {
+                                lote.nombre.contains("pan", ignoreCase = true) -> Icons.Default.BakeryDining
+                                lote.nombre.contains("manzana", ignoreCase = true) || lote.nombre.contains("fruta", ignoreCase = true) -> Icons.Default.Eco
+                                lote.nombre.contains("verdura", ignoreCase = true) || lote.nombre.contains("papa", ignoreCase = true) -> Icons.Default.Grass
+                                else -> Icons.Default.Restaurant
+                            }
+                            Icon(icon, contentDescription = null, tint = EcoForestGreen, modifier = Modifier.size(32.dp))
+                        }
                     }
                 }
 
@@ -558,6 +627,31 @@ fun LoteCardItem(
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                             )
+                        }
+
+                        // BADGE DE FOTOS DISPONIBLES
+                        Surface(
+                            shape = RoundedCornerShape(50),
+                            color = Color(0xFFEFF6FF)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Default.PhotoCamera,
+                                    contentDescription = null,
+                                    tint = Color(0xFF2563EB),
+                                    modifier = Modifier.size(10.dp)
+                                )
+                                Spacer(modifier = Modifier.width(2.dp))
+                                Text(
+                                    if (fotosLote.size == 1) "1 foto" else "${fotosLote.size} fotos",
+                                    color = Color(0xFF1D4ED8),
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
 
                         // BADGE DE PRIORIDAD / VENCIMIENTO AUTOMÁTICO

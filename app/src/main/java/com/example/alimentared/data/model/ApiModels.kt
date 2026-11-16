@@ -99,7 +99,8 @@ data class LoteResponse(
     val contacto: String? = null,
     val fechaRegistro: String? = null,
     val fechaCaducidad: String,
-    val rescateUrgente: Boolean = false
+    val rescateUrgente: Boolean = false,
+    val fotos: List<String> = emptyList()
 )
 
 data class LoteRequest(
@@ -113,7 +114,8 @@ data class LoteRequest(
     val fechaCaducidad: String,
     val ubicacion: String? = null,
     val instruccionesRecogida: String? = null,
-    val contacto: String? = null
+    val contacto: String? = null,
+    val fotos: List<String> = emptyList()
 )
 
 // --- SOLICITUDES (RF05, RF06) ---
