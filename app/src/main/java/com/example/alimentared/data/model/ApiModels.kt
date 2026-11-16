@@ -278,6 +278,12 @@ data class CambioContrasenaRequest(
     val contrasenaNueva: String
 )
 
+data class RestablecerContrasenaRequest(
+    val correo: String,
+    val contrasenaNueva: String,
+    val codigoVerificacion: String? = null
+)
+
 data class UsuarioInternoRequest(
     val nombre: String,
     val correo: String,

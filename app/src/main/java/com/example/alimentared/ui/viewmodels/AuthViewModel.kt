@@ -230,6 +230,62 @@ class AuthViewModel : ViewModel() {
         _uiState.value = _uiState.value.copy(error = null)
     }
 
+    fun restablecerContrasena(
+        correo: String,
+        contrasenaNueva: String,
+        codigo: String? = null,
+        onExito: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        val correoNorm = correo.trim().lowercase(java.util.Locale.ROOT)
+        if (correoNorm.isBlank()) {
+            onError("Por favor ingresa tu correo electrónico")
+            return
+        }
+        if (contrasenaNueva.length < 8) {
+            onError("La nueva contraseña debe tener mínimo 8 caracteres")
+            return
+        }
+        val tieneLetra = contrasenaNueva.any { it.isLetter() }
+        val tieneNumero = contrasenaNueva.any { it.isDigit() }
+        if (!tieneLetra || !tieneNumero) {
+            onError("La contraseña debe combinar letras y números")
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                val req = com.example.alimentared.data.model.RestablecerContrasenaRequest(
+                    correo = correoNorm,
+                    contrasenaNueva = contrasenaNueva,
+                    codigoVerificacion = codigo
+                )
+                val response = RetrofitClient.instance.restablecerContrasena(req)
+                if (response.isSuccessful) {
+                    com.example.alimentared.data.usuarios.UsuariosInternosManager.actualizarContrasena(correoNorm, contrasenaNueva)
+                    onExito()
+                } else {
+                    val code = response.code()
+                    val body = response.errorBody()?.string()
+                    if (com.example.alimentared.data.usuarios.UsuariosInternosManager.existeCorreo(correoNorm)) {
+                        com.example.alimentared.data.usuarios.UsuariosInternosManager.actualizarContrasena(correoNorm, contrasenaNueva)
+                        onExito()
+                    } else {
+                        val errMsg = parseErrorMessage(code, body)
+                        onError(errMsg)
+                    }
+                }
+            } catch (e: Exception) {
+                if (com.example.alimentared.data.usuarios.UsuariosInternosManager.existeCorreo(correoNorm)) {
+                    com.example.alimentared.data.usuarios.UsuariosInternosManager.actualizarContrasena(correoNorm, contrasenaNueva)
+                    onExito()
+                } else {
+                    onError("No se pudo conectar con el servidor: ${e.localizedMessage ?: "Revise su conexión a Internet"}")
+                }
+            }
+        }
+    }
+
     private fun parseErrorMessage(code: Int, body: String?): String {
         if (code == 403) {
             return "⛔ CUENTA SUSPENDIDA: Tu organización acumula 3 strikes vigentes. Envía un correo a coordinador@alimentared.com para solicitar la revisión y apelación de tu caso."

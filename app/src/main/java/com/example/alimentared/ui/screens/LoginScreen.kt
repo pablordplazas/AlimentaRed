@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Grass
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LockReset
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.RadioButtonChecked
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
@@ -28,6 +29,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -94,6 +96,7 @@ fun LoginScreen(
     var email by remember { mutableStateOf(if (esModoPruebas) "receptora@pancompartido.org" else "") }
     var password by remember { mutableStateOf(if (esModoPruebas) "Pass12345" else "") }
     var showLoginPassword by remember { mutableStateOf(false) }
+    var mostrarDialogoRestablecer by remember { mutableStateOf(false) }
 
     // Campos Registro
     var regNit by remember { mutableStateOf("") }
@@ -490,13 +493,36 @@ fun LoginScreen(
                         colors = ecoTextFieldColors
                     )
 
-                    // ENLACE OLVIDÓ CONTRASEÑA
-                    Text(
-                        text = "Olvidó su contraseña",
-                        fontSize = 11.sp,
-                        color = EcoTextMuted,
-                        modifier = Modifier.padding(start = 4.dp)
-                    )
+                    // ENLACE OLVIDÓ CONTRASEÑA / RESTABLECER
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { mostrarDialogoRestablecer = true }
+                                .padding(vertical = 4.dp, horizontal = 2.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.LockReset,
+                                contentDescription = null,
+                                tint = EcoForestGreen,
+                                modifier = Modifier.size(15.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "¿Olvidaste tu contraseña? Restablecer aquí",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = EcoForestGreen
+                            )
+                        }
+                    }
 
                     Spacer(modifier = Modifier.height(4.dp))
 
@@ -878,6 +904,26 @@ fun LoginScreen(
                     correo = correo,
                     nombre = nombre,
                     rol = rol
+                )
+            }
+        )
+    }
+
+    if (mostrarDialogoRestablecer) {
+        com.example.alimentared.ui.components.RestablecerContrasenaDialog(
+            correoInicial = email,
+            onDismiss = { mostrarDialogoRestablecer = false },
+            onRestablecerConfirmado = { correoReset, nuevaPass, codigo, onExito, onError ->
+                authViewModel.restablecerContrasena(
+                    correo = correoReset,
+                    contrasenaNueva = nuevaPass,
+                    codigo = codigo,
+                    onExito = {
+                        email = correoReset
+                        password = nuevaPass
+                        onExito()
+                    },
+                    onError = onError
                 )
             }
         )

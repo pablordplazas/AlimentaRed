@@ -21,6 +21,9 @@ interface ApiService {
     @POST("auth/register")
     suspend fun register(@Body request: RegisterRequest): Response<AuthResponse>
 
+    @POST("auth/restablecer-contrasena")
+    suspend fun restablecerContrasena(@Body request: RestablecerContrasenaRequest): Response<Unit>
+
     @GET("usuarios/me")
     suspend fun getPerfil(): Response<UsuarioResponse>
 

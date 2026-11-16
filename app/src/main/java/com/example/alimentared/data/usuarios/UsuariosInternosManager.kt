@@ -81,7 +81,11 @@ object UsuariosInternosManager {
     fun obtenerTodos(): List<UsuarioInternoItem> {
         val todos = mutableListOf<UsuarioInternoItem>()
         todos.addAll(usuariosCreados)
-        todos.addAll(usuariosPredefinidos)
+        usuariosPredefinidos.forEach { predef ->
+            if (todos.none { it.correo.equals(predef.correo, ignoreCase = true) }) {
+                todos.add(predef)
+            }
+        }
         return todos
     }
 
@@ -127,6 +131,26 @@ object UsuariosInternosManager {
     fun existeCorreo(correo: String): Boolean {
         val correoNorm = correo.trim().lowercase(Locale.ROOT)
         return obtenerTodos().any { it.correo.equals(correoNorm, ignoreCase = true) }
+    }
+
+    @Synchronized
+    fun actualizarContrasena(correo: String, nuevaContrasena: String): Boolean {
+        val correoNorm = correo.trim().lowercase(Locale.ROOT)
+        val existenteIndex = usuariosCreados.indexOfFirst { it.correo.equals(correoNorm, ignoreCase = true) }
+        if (existenteIndex >= 0) {
+            val actual = usuariosCreados[existenteIndex]
+            usuariosCreados[existenteIndex] = actual.copy(contrasena = nuevaContrasena)
+            guardarEnPrefs()
+            return true
+        }
+        val predef = usuariosPredefinidos.find { it.correo.equals(correoNorm, ignoreCase = true) }
+        if (predef != null) {
+            val override = predef.copy(contrasena = nuevaContrasena)
+            usuariosCreados.add(0, override)
+            guardarEnPrefs()
+            return true
+        }
+        return false
     }
 
     fun toUsuarioResponse(item: UsuarioInternoItem): UsuarioResponse {

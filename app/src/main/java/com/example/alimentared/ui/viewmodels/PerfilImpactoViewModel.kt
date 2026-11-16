@@ -127,6 +127,76 @@ class PerfilImpactoViewModel : ViewModel() {
         }
     }
 
+    fun cambiarContrasena(
+        contrasenaActual: String,
+        contrasenaNueva: String,
+        onExito: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        val user = _uiState.value.usuario
+        if (contrasenaActual.isBlank()) {
+            onError("Por favor ingresa tu contraseña actual")
+            return
+        }
+        if (contrasenaNueva.length < 8) {
+            onError("La nueva contraseña debe tener mínimo 8 caracteres")
+            return
+        }
+        val tieneLetra = contrasenaNueva.any { it.isLetter() }
+        val tieneNumero = contrasenaNueva.any { it.isDigit() }
+        if (!tieneLetra || !tieneNumero) {
+            onError("La nueva contraseña debe combinar letras y números")
+            return
+        }
+        if (contrasenaActual == contrasenaNueva) {
+            onError("La nueva contraseña debe ser distinta a la actual")
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                val req = com.example.alimentared.data.model.CambioContrasenaRequest(
+                    contrasenaActual = contrasenaActual,
+                    contrasenaNueva = contrasenaNueva
+                )
+                val response = RetrofitClient.instance.cambiarContrasena(req)
+                if (response.isSuccessful) {
+                    user?.correo?.let { correo ->
+                        com.example.alimentared.data.usuarios.UsuariosInternosManager.actualizarContrasena(correo, contrasenaNueva)
+                    }
+                    onExito()
+                } else {
+                    val code = response.code()
+                    val body = response.errorBody()?.string()
+                    if (user != null && com.example.alimentared.data.usuarios.UsuariosInternosManager.existeCorreo(user.correo)) {
+                        val localUser = com.example.alimentared.data.usuarios.UsuariosInternosManager.buscarPorCorreo(user.correo)
+                        if (localUser != null && localUser.contrasena != contrasenaActual) {
+                            onError("La contraseña actual no es correcta")
+                            return@launch
+                        }
+                        com.example.alimentared.data.usuarios.UsuariosInternosManager.actualizarContrasena(user.correo, contrasenaNueva)
+                        onExito()
+                    } else {
+                        val errMsg = parseErrorBody(code, body)
+                        onError(errMsg)
+                    }
+                }
+            } catch (e: Exception) {
+                if (user != null && com.example.alimentared.data.usuarios.UsuariosInternosManager.existeCorreo(user.correo)) {
+                    val localUser = com.example.alimentared.data.usuarios.UsuariosInternosManager.buscarPorCorreo(user.correo)
+                    if (localUser != null && localUser.contrasena != contrasenaActual) {
+                        onError("La contraseña actual no es correcta")
+                        return@launch
+                    }
+                    com.example.alimentared.data.usuarios.UsuariosInternosManager.actualizarContrasena(user.correo, contrasenaNueva)
+                    onExito()
+                } else {
+                    onError("No se pudo conectar con el servidor: ${e.localizedMessage ?: "Revise su conexión a Internet"}")
+                }
+            }
+        }
+    }
+
     private fun parseErrorBody(code: Int, body: String?): String {
         if (!body.isNullOrBlank()) {
             try {

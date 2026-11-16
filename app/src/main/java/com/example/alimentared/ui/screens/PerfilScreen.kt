@@ -41,6 +41,7 @@ fun PerfilScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var subVista by remember { mutableStateOf(PerfilSubVista.PERFIL) }
+    var mostrarDialogoCambiarContrasena by remember { mutableStateOf(false) }
 
     val user = uiState.usuario
     val rol = user?.rol?.uppercase() ?: ""
@@ -243,6 +244,69 @@ fun PerfilScreen(
                     PerfilFieldCard(label = "Organización", valor = user?.organizacion?.nombre ?: "AlimentaRed")
                     if (user?.organizacion?.nit != null) {
                         PerfilFieldCard(label = "NIT", valor = user.organizacion.nit)
+                    }
+
+                    // SECCIÓN SEGURIDAD Y CAMBIO DE CONTRASEÑA (PARA TODAS LAS CUENTAS)
+                    Card(
+                        shape = RoundedCornerShape(18.dp),
+                        colors = CardDefaults.cardColors(containerColor = EcoSurface),
+                        border = BorderStroke(1.dp, EcoBorder),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { mostrarDialogoCambiarContrasena = true }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = EcoMintLight,
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            Icons.Default.VpnKey,
+                                            contentDescription = null,
+                                            tint = EcoForestGreen,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        "Seguridad y Contraseña",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp,
+                                        color = EcoTextPrimary
+                                    )
+                                    Text(
+                                        "Cambiar tu contraseña de acceso",
+                                        fontSize = 11.sp,
+                                        color = EcoTextMuted
+                                    )
+                                }
+                            }
+
+                            Surface(
+                                shape = RoundedCornerShape(50),
+                                color = EcoMintLight
+                            ) {
+                                Text(
+                                    "Cambiar",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = EcoForestGreen,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                                )
+                            }
+                        }
                     }
 
                     // 2. VISUALIZADOR DE STRIKES Y SANCIONES (RN08 / RN12)
@@ -542,6 +606,24 @@ fun PerfilScreen(
                 }
             }
         }
+    }
+
+    if (mostrarDialogoCambiarContrasena && user != null) {
+        com.example.alimentared.ui.components.CambiarContrasenaDialog(
+            nombreUsuario = user.nombre,
+            rolUsuario = user.rol,
+            onDismiss = { mostrarDialogoCambiarContrasena = false },
+            onCambiarConfirmado = { actual, nueva, onExito, onError ->
+                viewModel.cambiarContrasena(
+                    contrasenaActual = actual,
+                    contrasenaNueva = nueva,
+                    onExito = {
+                        onExito()
+                    },
+                    onError = onError
+                )
+            }
+        )
     }
 }
 
