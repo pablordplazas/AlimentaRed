@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -30,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.launch
 import com.example.alimentared.ui.theme.*
 import com.example.alimentared.util.LogisticaLocationUtils
 import com.example.alimentared.util.UbicacionPunto
@@ -51,6 +53,11 @@ fun MapaSelectorDialog(
     var longitudActual by remember { mutableDoubleStateOf(puntoInicial.longitud) }
     var direccionTexto by remember { mutableStateOf(puntoInicial.direccion) }
     var nombreLugarTexto by remember { mutableStateOf(puntoInicial.nombreLugar ?: "Punto de Entrega") }
+
+    var queryBusqueda by remember { mutableStateOf("") }
+    var estaBuscandoOsm by remember { mutableStateOf(false) }
+    var resultadosOsm by remember { mutableStateOf<List<com.example.alimentared.util.OsmLugar>>(emptyList()) }
+    val coroutineScope = rememberCoroutineScope()
 
     // Launcher para permisos de ubicación
     val locationPermissionLauncher = rememberLauncherForActivityResult(
@@ -140,7 +147,123 @@ fun MapaSelectorDialog(
                     }
                 }
 
-                // 2. CHIPS DE PUNTOS LOGÍSTICOS ESTRATÉGICOS
+                // 2. BÚSQUEDA DIRECTA MEDIANTE API OFICIAL OPENSTREETMAP (NOMINATIM)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color.White)
+                        .padding(horizontal = 14.dp, vertical = 6.dp)
+                ) {
+                    OutlinedTextField(
+                        value = queryBusqueda,
+                        onValueChange = { queryBusqueda = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("Buscar dirección o punto en OpenStreetMap...", fontSize = 12.sp) },
+                        leadingIcon = {
+                            Icon(Icons.Default.Search, contentDescription = "Buscar", tint = EcoForestGreen, modifier = Modifier.size(18.dp))
+                        },
+                        trailingIcon = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (queryBusqueda.isNotBlank()) {
+                                    IconButton(onClick = {
+                                        queryBusqueda = ""
+                                        resultadosOsm = emptyList()
+                                    }) {
+                                        Icon(Icons.Default.Clear, contentDescription = "Limpiar", tint = EcoTextMuted, modifier = Modifier.size(18.dp))
+                                    }
+                                }
+                                IconButton(onClick = {
+                                    if (queryBusqueda.isNotBlank()) {
+                                        estaBuscandoOsm = true
+                                        coroutineScope.launch {
+                                            resultadosOsm = LogisticaLocationUtils.buscarEnOpenStreetMap(queryBusqueda)
+                                            estaBuscandoOsm = false
+                                            if (resultadosOsm.isEmpty()) {
+                                                Toast.makeText(context, "No se encontraron resultados en OpenStreetMap", Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                    }
+                                }) {
+                                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Buscar", tint = EcoForestGreen, modifier = Modifier.size(20.dp))
+                                }
+                            }
+                        },
+                        singleLine = true,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Search),
+                        keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                            onSearch = {
+                                if (queryBusqueda.isNotBlank()) {
+                                    estaBuscandoOsm = true
+                                    coroutineScope.launch {
+                                        resultadosOsm = LogisticaLocationUtils.buscarEnOpenStreetMap(queryBusqueda)
+                                        estaBuscandoOsm = false
+                                        if (resultadosOsm.isEmpty()) {
+                                            Toast.makeText(context, "No se encontraron resultados en OpenStreetMap", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                }
+                            }
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = EcoForestGreen,
+                            unfocusedBorderColor = EcoBorder,
+                            focusedContainerColor = EcoBackground,
+                            unfocusedContainerColor = EcoBackground
+                        )
+                    )
+
+                    if (estaBuscandoOsm) {
+                        LinearProgressIndicator(
+                            color = EcoForestGreen,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 4.dp)
+                        )
+                    }
+
+                    if (resultadosOsm.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text("Resultados OpenStreetMap:", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = EcoForestGreen)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(resultadosOsm) { lugar ->
+                                Surface(
+                                    shape = RoundedCornerShape(50),
+                                    color = EcoMintLight,
+                                    border = BorderStroke(1.dp, EcoForestGreen),
+                                    modifier = Modifier.clickable {
+                                        latitudActual = lugar.latitud
+                                        longitudActual = lugar.longitud
+                                        direccionTexto = lugar.direccionCompleta
+                                        nombreLugarTexto = lugar.nombreLugar
+                                        resultadosOsm = emptyList()
+                                        queryBusqueda = lugar.nombreLugar
+                                    }
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text("📍", fontSize = 12.sp)
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            lugar.nombreLugar,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = EcoForestGreen
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 2.5. CHIPS DE PUNTOS LOGÍSTICOS ESTRATÉGICOS
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -207,9 +330,18 @@ fun MapaSelectorDialog(
                         onCoordenadasCambiadas = { nuevaLat, nuevaLng ->
                             latitudActual = nuevaLat
                             longitudActual = nuevaLng
-                            // Si el usuario movió manualmente el pin, actualizamos etiqueta
-                            if (!direccionTexto.contains("GPS") && !direccionTexto.contains("Fijado")) {
-                                direccionTexto = "Ubicación fijada en el mapa"
+                            // Geocodificación inversa en tiempo real mediante OpenStreetMap Nominatim
+                            coroutineScope.launch {
+                                val dirOsm = LogisticaLocationUtils.geocodificarInversoOpenStreetMap(nuevaLat, nuevaLng)
+                                if (!dirOsm.isNullOrBlank()) {
+                                    direccionTexto = dirOsm
+                                    val primerSegmento = dirOsm.split(",").firstOrNull()?.trim()
+                                    if (!primerSegmento.isNullOrBlank()) {
+                                        nombreLugarTexto = primerSegmento
+                                    }
+                                } else if (!direccionTexto.contains("GPS")) {
+                                    direccionTexto = "Ubicación fijada en el mapa"
+                                }
                             }
                         },
                         modifier = Modifier.fillMaxSize()

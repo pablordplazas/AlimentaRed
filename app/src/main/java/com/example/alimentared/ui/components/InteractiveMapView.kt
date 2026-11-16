@@ -78,13 +78,17 @@ fun InteractiveMapView(
                         allowFileAccess = true
                         allowContentAccess = true
                         databaseEnabled = true
+                        allowFileAccessFromFileURLs = true
+                        allowUniversalAccessFromFileURLs = true
+                        cacheMode = WebSettings.LOAD_DEFAULT
                         setSupportZoom(true)
                         builtInZoomControls = false
                         displayZoomControls = false
                         loadWithOverviewMode = true
                         useWideViewPort = true
                         mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-                        userAgentString = "Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Mobile Safari/537.36 AlimentaRed/1.0"
+                        // User-Agent específico conforme a la política oficial de mosaicos de OpenStreetMap
+                        userAgentString = "AlimentaRed/1.0 (Android; app-alimentared; contacto@alimentared.com)"
                     }
 
                     val bridge = object {
@@ -141,7 +145,8 @@ fun InteractiveMapView(
                 }
             },
             update = { webView ->
-                // Mantener referencia activa
+                webViewRef = webView
+                webView.evaluateJavascript("if (typeof map !== 'undefined' && map) { map.invalidateSize(); }", null)
             }
         )
 

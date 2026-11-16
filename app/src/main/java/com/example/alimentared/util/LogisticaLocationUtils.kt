@@ -4,13 +4,27 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import org.json.JSONArray
+import org.json.JSONObject
 import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 data class UbicacionPunto(
     val latitud: Double,
     val longitud: Double,
     val direccion: String,
     val nombreLugar: String? = null
+)
+
+data class OsmLugar(
+    val nombreLugar: String,
+    val direccionCompleta: String,
+    val latitud: Double,
+    val longitud: Double
 )
 
 object LogisticaLocationUtils {
@@ -159,6 +173,82 @@ object LogisticaLocationUtils {
             } catch (ex: Exception) {
                 Toast.makeText(context, "No se pudo abrir la aplicación de mapas", Toast.LENGTH_SHORT).show()
             }
+        }
+    }
+
+    /**
+     * Cliente HTTP configurado para consultar la API de OpenStreetMap (Nominatim).
+     * Cumple con la política de uso de OSM incluyendo un User-Agent identificativo.
+     */
+    private val osmHttpClient by lazy {
+        OkHttpClient.Builder()
+            .connectTimeout(5, TimeUnit.SECONDS)
+            .readTimeout(5, TimeUnit.SECONDS)
+            .build()
+    }
+
+    /**
+     * Busca ubicaciones y direcciones en Colombia utilizando la API oficial de OpenStreetMap Nominatim.
+     */
+    suspend fun buscarEnOpenStreetMap(query: String): List<OsmLugar> = withContext(Dispatchers.IO) {
+        val q = query.trim()
+        if (q.length < 2) return@withContext emptyList()
+        try {
+            val encodedQuery = Uri.encode(q)
+            val url = "https://nominatim.openstreetmap.org/search?format=json&q=$encodedQuery&countrycodes=co&limit=5&addressdetails=1"
+            val request = Request.Builder()
+                .url(url)
+                .header("User-Agent", "AlimentaRed/1.0 (Android; app-alimentared; contacto@alimentared.com)")
+                .build()
+
+            val response = osmHttpClient.newCall(request).execute()
+            val body = response.body?.string() ?: return@withContext emptyList()
+            val jsonArray = JSONArray(body)
+            val resultados = mutableListOf<OsmLugar>()
+
+            for (i in 0 until jsonArray.length()) {
+                val item = jsonArray.getJSONObject(i)
+                val displayName = item.optString("display_name", "")
+                val lat = item.optDouble("lat", DEFAULT_LAT)
+                val lon = item.optDouble("lon", DEFAULT_LNG)
+                val name = item.optString("name", displayName.split(",").firstOrNull() ?: "Punto OSM")
+
+                if (displayName.isNotBlank()) {
+                    resultados.add(
+                        OsmLugar(
+                            nombreLugar = if (name.isNotBlank()) name else "Punto OpenStreetMap",
+                            direccionCompleta = displayName,
+                            latitud = lat,
+                            longitud = lon
+                        )
+                    )
+                }
+            }
+            resultados
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    /**
+     * Geocodificación inversa mediante la API de OpenStreetMap Nominatim:
+     * Convierte coordenadas (latitud, longitud) en una dirección postal legible.
+     */
+    suspend fun geocodificarInversoOpenStreetMap(lat: Double, lng: Double): String? = withContext(Dispatchers.IO) {
+        try {
+            val url = String.format(Locale.US, "https://nominatim.openstreetmap.org/reverse?format=json&lat=%.5f&lon=%.5f&addressdetails=1", lat, lng)
+            val request = Request.Builder()
+                .url(url)
+                .header("User-Agent", "AlimentaRed/1.0 (Android; app-alimentared; contacto@alimentared.com)")
+                .build()
+
+            val response = osmHttpClient.newCall(request).execute()
+            val body = response.body?.string() ?: return@withContext null
+            val json = JSONObject(body)
+            val displayName = json.optString("display_name", "")
+            if (displayName.isNotBlank()) displayName else null
+        } catch (e: Exception) {
+            null
         }
     }
 }

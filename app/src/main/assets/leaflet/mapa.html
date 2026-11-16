@@ -158,12 +158,16 @@
     <script>
         var map = null;
         var marker = null;
+        var osmLayer = null;
+        var fallbackLayer = null;
         var esModoSeleccion = false;
         var tituloActual = "Punto Logístico";
         var subtituloActual = "AlimentaRed";
+        var isAndroidControlled = false;
 
         function initMap(lat, lng, zoom, modoSeleccion, titulo, subtitulo) {
-            esModoSeleccion = modoSeleccion;
+            isAndroidControlled = true;
+            esModoSeleccion = (modoSeleccion === true || modoSeleccion === "true");
             tituloActual = titulo || "Punto Logístico";
             subtituloActual = subtitulo || "";
 
@@ -171,10 +175,24 @@
             var lngNum = parseFloat(lng) || -74.0886;
             var zoomNum = parseInt(zoom) || 16;
 
+            // Si el mapa ya existe, actualizamos la vista sin destruir el contenedor DOM
             if (map) {
-                map.remove();
+                map.setView([latNum, lngNum], zoomNum);
+                if (marker) {
+                    marker.setLatLng([latNum, lngNum]);
+                    if (esModoSeleccion) {
+                        marker.dragging.enable();
+                    } else {
+                        marker.dragging.disable();
+                    }
+                    actualizarPopup(latNum, lngNum, true);
+                }
+                setTimeout(function() { map.invalidateSize(); }, 150);
+                setTimeout(function() { map.invalidateSize(); }, 500);
+                return;
             }
 
+            // Inicialización de Leaflet
             map = L.map('map', {
                 zoomControl: false,
                 attributionControl: false,
@@ -182,11 +200,29 @@
                 zoom: zoomNum
             });
 
-            // Capa 1: CartoDB Voyager (CDN rápido y fiable para móviles)
-            var cartoVoyager = L.tileLayer('https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            // Capa 1: OpenStreetMap Oficial (API OSM en alta definición y con subdominios a, b, c)
+            osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,
-                subdomains: 'abcd'
+                subdomains: ['a', 'b', 'c'],
+                attribution: '&copy; OpenStreetMap contributors'
             }).addTo(map);
+
+            // Capa 2: CartoDB Voyager como respaldo de alta velocidad si la red local tiene problemas con OSM
+            fallbackLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                maxZoom: 19,
+                subdomains: 'abcd',
+                attribution: '&copy; OpenStreetMap &copy; CARTO'
+            });
+
+            var tileErrorCount = 0;
+            osmLayer.on('tileerror', function(error, tile) {
+                tileErrorCount++;
+                if (tileErrorCount > 4 && !map.hasLayer(fallbackLayer)) {
+                    console.warn("Fallo de carga en mosaicos OSM, activando capa secundaria CartoDB...");
+                    map.removeLayer(osmLayer);
+                    fallbackLayer.addTo(map);
+                }
+            });
 
             // Icono personalizado Eco Abasto
             var ecoIcon = L.divIcon({
@@ -221,10 +257,10 @@
                 marker.openPopup();
             }
 
-            // Forzar actualización de tamaño tras render
-            setTimeout(function() { map.invalidateSize(); }, 150);
-            setTimeout(function() { map.invalidateSize(); }, 500);
-            setTimeout(function() { map.invalidateSize(); }, 1200);
+            // Forzar actualización de tamaño tras render de Compose
+            setTimeout(function() { if (map) map.invalidateSize(); }, 100);
+            setTimeout(function() { if (map) map.invalidateSize(); }, 350);
+            setTimeout(function() { if (map) map.invalidateSize(); }, 900);
 
             if (window.AndroidMapBridge && window.AndroidMapBridge.onMapReady) {
                 window.AndroidMapBridge.onMapReady();
@@ -239,9 +275,11 @@
                 (subtituloActual ? '<div class="popup-sub">' + escapeHtml(subtituloActual) + '</div>' : '') +
                 '<div class="coords-badge">' + latStr + ', ' + lngStr + '</div>';
             
-            marker.bindPopup(popupContent);
-            if (abrir) {
-                marker.openPopup();
+            if (marker) {
+                marker.bindPopup(popupContent);
+                if (abrir) {
+                    marker.openPopup();
+                }
             }
         }
 
@@ -261,7 +299,7 @@
             marker.setLatLng([lat, lng]);
             map.panTo([lat, lng], { animate: true, duration: 0.5 });
             actualizarPopup(lat, lng, true);
-            map.invalidateSize();
+            setTimeout(function() { if (map) map.invalidateSize(); }, 150);
         }
 
         function zoomIn() {
@@ -278,11 +316,19 @@
             return div.innerHTML;
         }
 
-        // Inicialización por defecto en caso de carga directa
-        window.addEventListener('DOMContentLoaded', function() {
-            if (!map) {
-                initMap(4.6145, -74.0886, 16, true, "Punto Logístico", "Bogotá");
+        window.addEventListener('resize', function() {
+            if (map) {
+                map.invalidateSize();
             }
+        });
+
+        // Inicialización diferida por defecto solo si no es controlado por Android
+        window.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                if (!map && !isAndroidControlled) {
+                    initMap(4.6145, -74.0886, 16, true, "Punto Logístico", "Bogotá");
+                }
+            }, 80);
         });
     </script>
 </body>
